@@ -29,15 +29,15 @@ interface KursPajakItem {
   perubahan: string;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL = 'http://localhost:3001/api';
 const API_KEY = 'kurs-saldo-secret-key-2026';
 const PLAYSTORE_URL = 'https://play.google.com/store/apps/details?id=kurs.valuta.kurvasi';
 
 // Import images
-const IC_KURS_SALDO = '/src/media/ic_kurs_saldo.png';
-const IC_AFFANDY = '/src/media/ic_affandy.svg';
-const IC_KURS_BI = '/src/media/ic_kurs_bi.png';
-const IC_KURS_PAJAK = '/src/media/ic_kurs_pajak.ico';
+const IC_KURS_SALDO = '/media/ic_kurs_saldo.png';
+const IC_AFFANDY = '/media/ic_affandy.svg';
+const IC_KURS_BI = '/media/ic_kurs_bi.png';
+const IC_KURS_PAJAK = '/media/ic_kurs_pajak.ico';
 
 export default function KursSaldo() {
   const [items, setItems] = useState<RSSItem[]>([]);
