@@ -527,26 +527,55 @@ export default function KursSaldo() {
             </div>
 
             {/* Date Range */}
-            <div className={`flex items-center space-x-3 ${darkMode ? 'bg-slate-700' : 'bg-slate-100'} px-4 py-2 rounded-xl`}>
-              <Calendar className={`w-5 h-5 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`} />
-              <input
-                type="date"
-                value={startDate}
-                min={dateRange.min}
-                max={dateRange.max}
-                onChange={(e) => setStartDate(e.target.value)}
-                className={`bg-transparent border-none focus:outline-none text-sm ${darkMode ? 'text-slate-200' : ''}`}
-              />
-              <span className={darkMode ? 'text-slate-500' : 'text-slate-500'}>—</span>
-              <input
-                type="date"
-                value={endDate}
-                min={dateRange.min}
-                max={dateRange.max}
-                onChange={(e) => setEndDate(e.target.value)}
-                className={`bg-transparent border-none focus:outline-none text-sm ${darkMode ? 'text-slate-200' : ''}`}
-              />
+            <div
+              className={`
+    flex flex-col sm:flex-row 
+    sm:items-center 
+    gap-2 sm:gap-3 
+    ${darkMode ? 'bg-slate-700' : 'bg-slate-100'} 
+    px-4 py-3 rounded-xl
+  `}
+            >
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Calendar
+                  className={`w-5 h-5 shrink-0 ${darkMode ? 'text-slate-400' : 'text-slate-600'
+                    }`}
+                />
+
+                <input
+                  type="date"
+                  value={startDate}
+                  min={dateRange.min}
+                  max={dateRange.max}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className={`
+        w-full sm:w-auto
+        bg-transparent border-none 
+        focus:outline-none text-sm
+        ${darkMode ? 'text-slate-200' : ''}
+      `}
+                />
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <span className="text-slate-500 hidden sm:inline">—</span>
+
+                <input
+                  type="date"
+                  value={endDate}
+                  min={dateRange.min}
+                  max={dateRange.max}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className={`
+        w-full sm:w-auto
+        bg-transparent border-none 
+        focus:outline-none text-sm
+        ${darkMode ? 'text-slate-200' : ''}
+      `}
+                />
+              </div>
             </div>
+
           </div>
 
           {/* Results Count */}

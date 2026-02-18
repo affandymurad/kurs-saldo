@@ -1,53 +1,20 @@
 [build]
   base      = "."
-  command   = "npm install --prefix frontend && npm run build --prefix frontend"
+  command   = "npm --prefix frontend install && npm --prefix frontend run build"
   publish   = "frontend/dist"
   functions = "netlify/functions"
 
-# ─── WAJIB untuk TypeScript functions ──────────────────────────────────────
 [functions]
   node_bundler = "esbuild"
 
-# ─── Dev server ─────────────────────────────────────────────────────────────
 [dev]
-  command    = "npm run dev --prefix frontend"
+  command    = "npm --prefix frontend run dev"
   port       = 8888
   targetPort = 5173
   functions  = "netlify/functions"
 
-# ─── Redirect: /api/* → Netlify Functions ───────────────────────────────────
+# API redirect only
 [[redirects]]
-  from   = "/api/health"
-  to     = "/.netlify/functions/health"
-  status = 200
-
-[[redirects]]
-  from   = "/api/feeds"
-  to     = "/.netlify/functions/feeds"
-  status = 200
-
-[[redirects]]
-  from   = "/api/sources"
-  to     = "/.netlify/functions/sources"
-  status = 200
-
-[[redirects]]
-  from   = "/api/generate-key"
-  to     = "/.netlify/functions/generate-key"
-  status = 200
-
-[[redirects]]
-  from   = "/api/kurs-bi"
-  to     = "/.netlify/functions/kurs-bi"
-  status = 200
-
-[[redirects]]
-  from   = "/api/kurs-pajak"
-  to     = "/.netlify/functions/kurs-pajak"
-  status = 200
-
-# ─── SPA fallback ────────────────────────────────────────────────────────────
-[[redirects]]
-  from   = "/*"
-  to     = "/index.html"
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
   status = 200
