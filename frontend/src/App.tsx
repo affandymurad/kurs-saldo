@@ -29,7 +29,7 @@ interface KursPajakItem {
   perubahan: string;
 }
 
-const API_URL = 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 const API_KEY = 'kurs-saldo-secret-key-2026';
 const PLAYSTORE_URL = 'https://play.google.com/store/apps/details?id=kurs.valuta.kurvasi';
 
