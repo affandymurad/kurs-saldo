@@ -66,12 +66,12 @@ async function fetchKursPajak(): Promise<KursPajakResponse> {
   // ── Ambil tanggal berlaku ──
   let tanggalRaw = '';
 
-  $('.text-muted').each((_, el) => {
-    const text = $(el).text().replace(/\u00A0/g, ' ').trim();
-    if (text.includes('Tanggal Berlaku:')) {
-      tanggalRaw = text.replace('Tanggal Berlaku:', '').trim();
-    }
-  });
+$('.text-muted em').each((_, el) => {
+  const text = $(el).text().replace(/\u00A0/g, ' ').trim();
+  if (text.toLowerCase().includes('tanggal berlaku:')) {
+    tanggalRaw = text.replace(/tanggal berlaku:\s*/i, '').trim();
+  }
+});
 
   if (!tanggalRaw) {
     throw new Error('Tanggal berlaku tidak ditemukan');

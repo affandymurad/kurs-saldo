@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Calendar, ChevronDown, Download, Smartphone, Copy, Check, Sun, Moon, X } from 'lucide-react';
+import { Search, Calendar, ChevronDown, Download, Smartphone, Copy, Check, Sun, Moon, X, RefreshCw } from 'lucide-react';
 
 interface RSSItem {
   title: string;
@@ -575,6 +575,17 @@ export default function KursSaldo() {
                 />
               </div>
             </div>
+
+          {/* Refresh Button */}
+          <button
+            onClick={fetchFeeds}
+            disabled={loading}
+            className={`px-4 py-3 rounded-xl font-medium flex items-center space-x-2 transition-all ${darkMode ? 'bg-slate-700 text-slate-200 hover:bg-slate-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'} disabled:opacity-50`}
+            title="Refresh berita"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button> 
 
           </div>
 
