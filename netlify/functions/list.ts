@@ -72,7 +72,7 @@ export const handler: Handler = async (event) => {
   // Optional query params: ?source=Detik&limit=50
   const params = event.queryStringParameters || {};
   const sourceFilter = params.source || '';
-  const limit = Math.min(parseInt(params.limit || '200', 10), 500);
+  const limit = params.limit ? Math.min(parseInt(params.limit, 10), 1000) : null;
 
   try {
     const sources = sourceFilter
@@ -89,7 +89,7 @@ export const handler: Handler = async (event) => {
     // Sort newest first
     merged.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
 
-    const data = merged.slice(0, limit);
+    const data = limit ? merged.slice(0, limit) : merged;
 
     return successResponse({
       success: true,
@@ -97,7 +97,7 @@ export const handler: Handler = async (event) => {
       total: merged.length,
       filters: {
         source: sourceFilter || 'semua',
-        limit
+        ...(limit ? { limit } : {})
       },
       data
     });
