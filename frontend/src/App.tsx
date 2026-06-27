@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Calendar, ChevronDown, Download, Copy, Check, Sun, Moon, X, RefreshCw, TrendingUp, Newspaper, Globe, FileJson, ArrowUp } from 'lucide-react';
+import { Search, ChevronDown, Download, Copy, Check, Sun, Moon, X, RefreshCw, TrendingUp, Newspaper, Globe, FileJson, ArrowUp } from 'lucide-react';
 
 // Asset imports — letakkan di frontend/src/assets/
 import cnbcLogo from './assets/cnbc_indonesia.svg';
@@ -61,9 +61,6 @@ export default function KursSaldo() {
   const [loading, setLoading] = useState(true);
   const [selectedSource, setSelectedSource] = useState('Semua');
   const [searchQuery, setSearchQuery] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [dateRange, setDateRange] = useState({ min: '', max: '' });
   const [showSourceDropdown, setShowSourceDropdown] = useState(false);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(() => {
@@ -97,7 +94,7 @@ export default function KursSaldo() {
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => { fetchFeeds(); }, []);
-  useEffect(() => { filterItems(); }, [items, selectedSource, searchQuery, startDate, endDate]);
+  useEffect(() => { filterItems(); }, [items, selectedSource, searchQuery]);
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
@@ -118,12 +115,6 @@ export default function KursSaldo() {
       const data = await response.json();
       if (data.success) {
         setItems(data.data);
-        const dates = data.data.map((item: RSSItem) => new Date(item.pubDate).getTime());
-        const minDate = new Date(Math.min(...dates)).toISOString().split('T')[0];
-        const maxDate = new Date(Math.max(...dates)).toISOString().split('T')[0];
-        setDateRange({ min: minDate, max: maxDate });
-        setStartDate(minDate);
-        setEndDate(maxDate);
       }
     } catch (error) {
       console.error('Error fetching feeds:', error);
@@ -284,14 +275,6 @@ export default function KursSaldo() {
         item.title.toLowerCase().includes(query) || item.description.toLowerCase().includes(query)
       );
     }
-    if (startDate && endDate) {
-      const start = new Date(startDate).getTime();
-      const end = new Date(endDate).getTime() + 86400000;
-      filtered = filtered.filter(item => {
-        const d = new Date(item.pubDate).getTime();
-        return d >= start && d < end;
-      });
-    }
     setFilteredItems(filtered);
   };
 
@@ -328,7 +311,7 @@ export default function KursSaldo() {
 
   // ─── Reusable class helpers ────────────────────────────────────────────────
   const card = `${dm ? 'bg-slate-800/80 border border-slate-700/60' : 'bg-white border border-slate-200/80'} rounded-2xl shadow-sm`;
-  const inputCls = `w-full rounded-xl border text-sm focus:outline-none transition-colors
+  const inputCls = `w-full rounded-xl border text-sm sm:text-base focus:outline-none transition-colors
     ${dm ? 'bg-slate-700/70 border-slate-600 text-slate-100 placeholder-slate-500 focus:border-indigo-500' : 'bg-white border-slate-200 text-slate-800 placeholder-slate-400 focus:border-indigo-400'}`;
 
   return (
@@ -345,8 +328,8 @@ export default function KursSaldo() {
                 <img src={IC_KURS_SALDO} alt="Kurs Saldo" className="w-6 h-6 object-contain" />
               </div>
               <div className="leading-tight">
-                <p className="font-bold text-sm tracking-tight">Kurs Saldo</p>
-                <p className={`text-[11px] ${dm ? 'text-slate-400' : 'text-slate-500'}`}>Berita Ekonomi & Kurs</p>
+                <p className="font-bold text-sm sm:text-base tracking-tight">Kurs Saldo</p>
+                <p className={`text-[11px] sm:text-sm ${dm ? 'text-slate-400' : 'text-slate-500'}`}>Berita Ekonomi & Kurs</p>
               </div>
             </div>
 
@@ -357,7 +340,7 @@ export default function KursSaldo() {
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Affandy Murad"
-                className={`flex items-center gap-1.5 text-sm font-medium px-2 py-1.5 rounded-lg transition-colors
+                className={`flex items-center gap-1.5 text-sm sm:text-base font-medium px-2 py-1.5 rounded-lg transition-colors
                   ${dm ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'}`}
               >
                 <img src={IC_AFFANDY} alt="Affandy" className="w-5 h-5 shrink-0" />
@@ -378,7 +361,7 @@ export default function KursSaldo() {
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Install di Android"
-                className="flex items-center gap-1.5 bg-indigo-600 active:bg-indigo-800 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors shadow-sm"
+                className="flex items-center gap-1.5 bg-indigo-600 active:bg-indigo-800 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl transition-colors shadow-sm"
               >
                 {/* Android icon from assets */}
                 <img src={androidIcon} alt="" className="w-3.5 h-3.5" />
@@ -391,7 +374,7 @@ export default function KursSaldo() {
           <div className={`flex items-center gap-2 pb-2.5 overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0`}>
             <button
               onClick={() => { setShowKursBI(true); setKursBISearch(''); fetchKursBI(); }}
-              className={`flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap px-3 py-2 rounded-xl border transition-colors shrink-0
+              className={`flex items-center gap-1.5 text-xs sm:text-sm font-semibold whitespace-nowrap px-3 py-2 rounded-xl border transition-colors shrink-0
                 ${dm ? 'bg-slate-800 border-slate-700 text-slate-200 active:bg-slate-700' : 'bg-slate-50 border-slate-200 text-slate-700 active:bg-slate-100'}`}
             >
               <img src={IC_KURS_BI} alt="BI" className="w-4 h-4 object-contain" />
@@ -400,7 +383,7 @@ export default function KursSaldo() {
 
             <button
               onClick={() => { setShowKursPajak(true); setKursPajakSearch(''); fetchKursPajak(); }}
-              className={`flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap px-3 py-2 rounded-xl border transition-colors shrink-0
+              className={`flex items-center gap-1.5 text-xs sm:text-sm font-semibold whitespace-nowrap px-3 py-2 rounded-xl border transition-colors shrink-0
                 ${dm ? 'bg-slate-800 border-slate-700 text-slate-200 active:bg-slate-700' : 'bg-slate-50 border-slate-200 text-slate-700 active:bg-slate-100'}`}
             >
               <img src={IC_KURS_PAJAK} alt="Pajak" className="w-4 h-4 object-contain" />
@@ -409,7 +392,7 @@ export default function KursSaldo() {
 
             <button
               onClick={() => { setShowList(true); fetchList(); }}
-              className={`flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap px-3 py-2 rounded-xl border transition-colors shrink-0
+              className={`flex items-center gap-1.5 text-xs sm:text-sm font-semibold whitespace-nowrap px-3 py-2 rounded-xl border transition-colors shrink-0
                 ${dm ? 'bg-slate-800 border-slate-700 text-emerald-400 active:bg-slate-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700 active:bg-emerald-100'}`}
             >
               <FileJson className="w-4 h-4" />
@@ -419,7 +402,7 @@ export default function KursSaldo() {
             {/* Spacer to push count to the right */}
             <span className="flex-1" />
 
-            <span className={`text-[11px] font-medium whitespace-nowrap shrink-0 px-2.5 py-1.5 rounded-lg
+            <span className={`text-[11px] sm:text-sm font-medium whitespace-nowrap shrink-0 px-2.5 py-1.5 rounded-lg
               ${dm ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
               {filteredItems.length}/{items.length} berita
             </span>
@@ -434,63 +417,74 @@ export default function KursSaldo() {
         {/* Filter Card */}
         <div className={`${card} p-4 sm:p-5 space-y-4 sm:space-y-5`}>
 
-          {/* Search */}
-          <div className="relative">
-            <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${dm ? 'text-slate-500' : 'text-slate-400'}`} />
-            <input
-              type="text"
-              placeholder="Cari judul atau konten berita..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className={`${inputCls} pl-10 pr-10 py-2.5`}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className={`absolute right-3.5 top-1/2 -translate-y-1/2 ${dm ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+          {/* Search + Refresh */}
+          <div className="flex items-center gap-2.5">
+            <div className="relative flex-1">
+              <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${dm ? 'text-slate-500' : 'text-slate-400'}`} />
+              <input
+                type="text"
+                placeholder="Cari judul atau konten berita..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className={`${inputCls} pl-10 pr-10 py-2.5`}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className={`absolute right-3.5 top-1/2 -translate-y-1/2 ${dm ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Refresh */}
+            <button
+              onClick={fetchFeeds}
+              disabled={loading}
+              className={`flex items-center justify-center gap-1.5 text-sm sm:text-base font-medium px-3.5 py-2.5 rounded-xl border transition-colors disabled:opacity-50 shrink-0
+                ${dm ? 'bg-slate-700 border-slate-600 text-slate-200 active:bg-slate-600' : 'bg-white border-slate-200 text-slate-700 active:bg-slate-50'}`}
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
           </div>
 
-          {/* Top Keywords */}
-          {topKeywords.length > 0 && (
-            <div>
-              <p className={`text-xs font-semibold uppercase tracking-wider mb-2.5 flex items-center gap-1.5 ${dm ? 'text-slate-400' : 'text-slate-500'}`}>
-                <TrendingUp className="w-3.5 h-3.5" /> Topik Populer
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {topKeywords.map((kw, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setSearchQuery(kw.word)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all border
-                      ${searchQuery === kw.word
-                        ? 'bg-indigo-600 text-white border-indigo-600'
-                        : dm
-                          ? 'bg-slate-700 border-slate-600 text-slate-300 hover:border-indigo-500 hover:text-indigo-300'
-                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600'
-                      }`}
-                  >
-                    #{kw.word}
-                    <span className={`ml-1 ${searchQuery === kw.word ? 'text-indigo-200' : dm ? 'text-slate-500' : 'text-slate-400'}`}>
-                      {kw.count}
-                    </span>
-                  </button>
-                ))}
+          {/* Top Keywords + Source Dropdown */}
+          <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
+            {topKeywords.length > 0 && (
+              <div className="flex-1 min-w-0">
+                <p className={`text-xs sm:text-sm font-semibold uppercase tracking-wider mb-2.5 flex items-center gap-1.5 ${dm ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <TrendingUp className="w-3.5 h-3.5" /> Topik Populer
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {topKeywords.map((kw, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSearchQuery(kw.word)}
+                      className={`px-2.5 py-1 rounded-lg text-xs sm:text-sm font-medium transition-all border
+                        ${searchQuery === kw.word
+                          ? 'bg-indigo-600 text-white border-indigo-600'
+                          : dm
+                            ? 'bg-slate-700 border-slate-600 text-slate-300 hover:border-indigo-500 hover:text-indigo-300'
+                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600'
+                        }`}
+                    >
+                      #{kw.word}
+                      <span className={`ml-1 ${searchQuery === kw.word ? 'text-indigo-200' : dm ? 'text-slate-500' : 'text-slate-400'}`}>
+                        {kw.count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-
-          {/* Controls Row */}
-          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2.5">
+            )}
 
             {/* Source Dropdown */}
-            <div className="relative">
+            <div className="relative shrink-0">
               <button
                 onClick={() => setShowSourceDropdown(!showSourceDropdown)}
-                className={`w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2 text-sm font-medium px-3.5 py-2.5 rounded-xl border transition-colors
+                className={`w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2 text-sm sm:text-base font-medium px-3.5 py-2.5 rounded-xl border transition-colors
                   ${selectedSource !== 'Semua'
                     ? 'bg-indigo-600 text-white border-indigo-600'
                     : dm
@@ -506,13 +500,13 @@ export default function KursSaldo() {
               </button>
 
               {showSourceDropdown && (
-                <div className={`absolute top-full mt-1.5 left-0 z-20 w-full sm:min-w-[180px] rounded-xl shadow-xl border overflow-hidden
+                <div className={`absolute top-full mt-1.5 right-0 z-20 w-full sm:min-w-[180px] rounded-xl shadow-xl border overflow-hidden
                   ${dm ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
                   {sources.map(source => (
                     <button
                       key={source}
                       onClick={() => { setSelectedSource(source); setShowSourceDropdown(false); }}
-                      className={`flex items-center gap-2.5 w-full text-left px-4 py-3 text-sm transition-colors
+                      className={`flex items-center gap-2.5 w-full text-left px-4 py-3 text-sm sm:text-base transition-colors
                         ${selectedSource === source
                           ? dm ? 'bg-indigo-600/20 text-indigo-300' : 'bg-indigo-50 text-indigo-700'
                           : dm ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-50 text-slate-700'
@@ -529,46 +523,6 @@ export default function KursSaldo() {
                 </div>
               )}
             </div>
-
-            {/* Date Range — stacks on mobile */}
-            <div className={`flex flex-col sm:flex-row sm:items-center gap-2 px-3.5 py-2.5 rounded-xl border text-sm
-              ${dm ? 'bg-slate-700 border-slate-600 text-slate-200' : 'bg-white border-slate-200 text-slate-700'}`}>
-              <div className="flex items-center gap-2">
-                <Calendar className={`w-4 h-4 shrink-0 ${dm ? 'text-slate-400' : 'text-slate-500'}`} />
-                <input
-                  type="date"
-                  value={startDate}
-                  min={dateRange.min}
-                  max={dateRange.max}
-                  onChange={e => setStartDate(e.target.value)}
-                  className="bg-transparent border-none focus:outline-none text-sm flex-1 min-w-0"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={`hidden sm:inline ${dm ? 'text-slate-500' : 'text-slate-400'}`}>—</span>
-                <span className={`sm:hidden text-xs ${dm ? 'text-slate-500' : 'text-slate-400'}`}>s/d</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  min={dateRange.min}
-                  max={dateRange.max}
-                  onChange={e => setEndDate(e.target.value)}
-                  className="bg-transparent border-none focus:outline-none text-sm flex-1 min-w-0"
-                />
-              </div>
-            </div>
-
-            {/* Refresh */}
-            <button
-              onClick={fetchFeeds}
-              disabled={loading}
-              className={`flex items-center justify-center gap-1.5 text-sm font-medium px-3.5 py-2.5 rounded-xl border transition-colors disabled:opacity-50
-                ${dm ? 'bg-slate-700 border-slate-600 text-slate-200 active:bg-slate-600' : 'bg-white border-slate-200 text-slate-700 active:bg-slate-50'}`}
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
-            </button>
-
           </div>
         </div>
 
@@ -576,13 +530,13 @@ export default function KursSaldo() {
         {loading ? (
           <div className="text-center py-24">
             <div className="inline-block w-10 h-10 border-[3px] border-indigo-500 border-t-transparent rounded-full animate-spin" />
-            <p className={`mt-4 text-sm ${dm ? 'text-slate-400' : 'text-slate-500'}`}>Memuat berita terkini…</p>
+            <p className={`mt-4 text-sm sm:text-base ${dm ? 'text-slate-400' : 'text-slate-500'}`}>Memuat berita terkini…</p>
           </div>
         ) : filteredItems.length === 0 ? (
           <div className="text-center py-24">
             <div className="text-5xl mb-4">🔍</div>
-            <h3 className={`text-lg font-semibold mb-1 ${dm ? 'text-slate-300' : 'text-slate-700'}`}>Tidak ada berita ditemukan</h3>
-            <p className={`text-sm ${dm ? 'text-slate-500' : 'text-slate-400'}`}>Coba ubah filter atau kata kunci pencarian</p>
+            <h3 className={`text-lg sm:text-xl font-semibold mb-1 ${dm ? 'text-slate-300' : 'text-slate-700'}`}>Tidak ada berita ditemukan</h3>
+            <p className={`text-sm sm:text-base ${dm ? 'text-slate-500' : 'text-slate-400'}`}>Coba ubah filter atau kata kunci pencarian</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-5">
@@ -602,13 +556,16 @@ export default function KursSaldo() {
                         <img
                           src={item.image}
                           alt={item.title}
+                          loading="lazy"
+                          decoding="async"
+                          referrerPolicy="no-referrer"
                           className="w-full h-full object-cover"
-                          onError={e => { e.currentTarget.parentElement!.style.display = 'none'; }}
+                          onError={e => { e.currentTarget.onerror = null; e.currentTarget.style.display = 'none'; }}
                         />
                         {/* Source badge — only visible on sm+ */}
-                        <div className={`hidden sm:flex absolute bottom-2.5 left-2.5 items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold
+                        <div className={`hidden sm:flex absolute bottom-2.5 left-2.5 items-center gap-1.5 px-2 py-1 rounded-lg text-xs sm:text-sm font-semibold
                           ${dm ? 'bg-slate-900/80 text-slate-100' : 'bg-white/90 text-slate-700'} backdrop-blur-sm shadow`}>
-                          <img src={logoSrc} alt={item.source} className="w-3.5 h-3.5 object-contain" onError={e => { e.currentTarget.style.display = 'none'; }} />
+                          <img src={logoSrc} alt={item.source} loading="lazy" decoding="async" referrerPolicy="no-referrer" className="w-3.5 h-3.5 object-contain" onError={e => { e.currentTarget.onerror = null; e.currentTarget.style.display = 'none'; }} />
                           {item.source}
                         </div>
                       </div>
@@ -621,22 +578,22 @@ export default function KursSaldo() {
                   {/* Body */}
                   <div className="p-3 sm:p-4 flex-1 flex flex-col gap-2 sm:gap-3 min-w-0">
                     {/* Meta */}
-                    <div className="flex items-center gap-1.5 text-[11px] sm:text-xs flex-wrap">
+                    <div className="flex items-center gap-1.5 text-[11px] sm:text-sm flex-wrap">
                       <span className={`sm:hidden flex items-center gap-1 px-1.5 py-0.5 rounded font-semibold
                         ${dm ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                        <img src={logoSrc} alt={item.source} className="w-3 h-3 object-contain" onError={e => { e.currentTarget.style.display = 'none'; }} />
+                        <img src={logoSrc} alt={item.source} loading="lazy" decoding="async" referrerPolicy="no-referrer" className="w-3 h-3 object-contain" onError={e => { e.currentTarget.onerror = null; e.currentTarget.style.display = 'none'; }} />
                         {item.source}
                       </span>
                       <span className={dm ? 'text-slate-500' : 'text-slate-400'}>{formatDate(item.pubDate)}</span>
                     </div>
 
                     {/* Title */}
-                    <h2 className={`font-semibold text-sm leading-snug line-clamp-2 sm:line-clamp-2 ${dm ? 'text-slate-100' : 'text-slate-800'}`}>
+                    <h2 className={`font-semibold text-sm sm:text-base leading-snug line-clamp-2 sm:line-clamp-2 ${dm ? 'text-slate-100' : 'text-slate-800'}`}>
                       {item.title.replace(/<!\[CDATA\[|\]\]>/g, '').trim()}
                     </h2>
 
                     {/* Description — hidden on mobile to save space */}
-                    <p className={`hidden sm:block text-xs leading-relaxed line-clamp-3 flex-1 ${dm ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <p className={`hidden sm:block text-xs sm:text-sm leading-relaxed line-clamp-3 flex-1 ${dm ? 'text-slate-400' : 'text-slate-500'}`}>
                       {stripHtml(item.description.replace(/<!\[CDATA\[|\]\]>/g, '')).trim()}
                     </p>
 
@@ -646,13 +603,13 @@ export default function KursSaldo() {
                         href={item.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs font-semibold text-indigo-500 hover:text-indigo-400 active:text-indigo-300 transition-colors"
+                        className="text-xs sm:text-sm font-semibold text-indigo-500 hover:text-indigo-400 active:text-indigo-300 transition-colors"
                       >
                         Baca →
                       </a>
                       <button
                         onClick={() => handleCopy(item.link)}
-                        className={`flex items-center gap-1 text-xs transition-colors p-1 -mr-1 rounded
+                        className={`flex items-center gap-1 text-xs sm:text-sm transition-colors p-1 -mr-1 rounded
                           ${copiedLink === item.link
                             ? 'text-emerald-500'
                             : dm ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
@@ -685,9 +642,9 @@ export default function KursSaldo() {
             )}
             {!kursBILoading && !kursBIError && kursBIData && (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm sm:text-base">
                   <thead>
-                    <tr className={`${dm ? 'bg-slate-700/70 text-slate-300' : 'bg-slate-50 text-slate-500'} text-right text-xs uppercase tracking-wide`}>
+                    <tr className={`${dm ? 'bg-slate-700/70 text-slate-300' : 'bg-slate-50 text-slate-500'} text-right text-xs sm:text-sm uppercase tracking-wide`}>
                       <th className="text-left px-2 sm:px-3 py-2.5 rounded-tl-lg">Mata Uang</th>
                       <th className="px-2 sm:px-3 py-2.5">Nilai</th>
                       <th className="px-2 sm:px-3 py-2.5 text-rose-400">Jual</th>
@@ -699,7 +656,7 @@ export default function KursSaldo() {
                     {kursBIData
                       .filter(row => row.mataUang.toLowerCase().includes(kursBISearch.toLowerCase()))
                       .map((row, i) => (
-                        <tr key={i} className={`border-b text-sm transition-colors
+                        <tr key={i} className={`border-b text-sm sm:text-base transition-colors
                           ${dm ? 'border-slate-700/40 hover:bg-slate-700/30' : 'border-slate-100 hover:bg-slate-50'}`}>
                           <td className="px-2 sm:px-3 py-2.5 font-semibold">{row.mataUang}</td>
                           <td className="px-2 sm:px-3 py-2.5 text-right">{row.nilai}</td>
@@ -728,9 +685,9 @@ export default function KursSaldo() {
             )}
             {!kursPajakLoading && !kursPajakError && kursPajakData && (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm sm:text-base">
                   <thead>
-                    <tr className={`${dm ? 'bg-slate-700/70 text-slate-300' : 'bg-slate-50 text-slate-500'} text-xs uppercase tracking-wide`}>
+                    <tr className={`${dm ? 'bg-slate-700/70 text-slate-300' : 'bg-slate-50 text-slate-500'} text-xs sm:text-sm uppercase tracking-wide`}>
                       <th className="text-left px-3 py-2.5 rounded-tl-lg">Mata Uang</th>
                       <th className="text-left px-3 py-2.5">Kode</th>
                       <th className="text-right px-3 py-2.5">Nilai</th>
@@ -752,9 +709,9 @@ export default function KursSaldo() {
                             ${dm ? 'border-slate-700/40 hover:bg-slate-700/30' : 'border-slate-100 hover:bg-slate-50'}`}>
                             <td className="px-3 py-2.5">{row.mataUangName}</td>
                             <td className="px-3 py-2.5 font-semibold">{row.mataUang}</td>
-                            <td className={`px-3 py-2.5 text-right text-xs ${dm ? 'text-slate-500' : 'text-slate-400'}`}>{row.nilai}</td>
+                            <td className={`px-3 py-2.5 text-right text-xs sm:text-sm ${dm ? 'text-slate-500' : 'text-slate-400'}`}>{row.nilai}</td>
                             <td className={`px-3 py-2.5 text-right font-semibold ${dm ? 'text-indigo-400' : 'text-indigo-600'}`}>{row.kurs}</td>
-                            <td className={`px-3 py-2.5 text-right font-medium text-xs
+                            <td className={`px-3 py-2.5 text-right font-medium text-xs sm:text-sm
                               ${isNeg ? 'text-rose-500' : isZero ? dm ? 'text-slate-500' : 'text-slate-400' : 'text-emerald-500'}`}>
                               {isNeg ? '' : isZero ? '' : '+'}{row.perubahan}
                             </td>
@@ -792,7 +749,7 @@ export default function KursSaldo() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <button
                     onClick={handleCopyList}
-                    className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl border transition-colors
+                    className={`flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl border transition-colors
                       ${listCopied
                         ? 'bg-emerald-600 text-white border-emerald-600'
                         : dm
@@ -806,7 +763,7 @@ export default function KursSaldo() {
 
                   <button
                     onClick={handleDownloadList}
-                    className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl border transition-colors
+                    className={`flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl border transition-colors
                       ${dm
                         ? 'bg-slate-700 border-slate-600 text-slate-200 hover:bg-slate-600'
                         : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -816,7 +773,7 @@ export default function KursSaldo() {
                     Unduh .json
                   </button>
 
-                  <span className={`ml-auto text-[11px] px-2.5 py-1.5 rounded-lg font-medium
+                  <span className={`ml-auto text-[11px] sm:text-sm px-2.5 py-1.5 rounded-lg font-medium
                     ${dm ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
                     {JSON.parse(listJson).count} item
                   </span>
@@ -825,7 +782,7 @@ export default function KursSaldo() {
                 {/* JSON preview */}
                 <div className={`rounded-xl border overflow-auto max-h-[55dvh] sm:max-h-[60vh]
                   ${dm ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                  <pre className={`text-[11px] sm:text-xs leading-relaxed p-4 font-mono
+                  <pre className={`text-[11px] sm:text-sm leading-relaxed p-4 font-mono
                     ${dm ? 'text-slate-300' : 'text-slate-700'}`}>
                     {listJson}
                   </pre>
@@ -838,12 +795,12 @@ export default function KursSaldo() {
 
       {/* Footer */}
       <footer className={`${dm ? 'border-t border-slate-800' : 'border-t border-slate-200'} mt-12 py-8 text-center`}>
-        <p className={`text-xs ${dm ? 'text-slate-500' : 'text-slate-400'}`}>© 2026 Kurs Saldo. All rights reserved.</p>
+        <p className={`text-xs sm:text-sm ${dm ? 'text-slate-500' : 'text-slate-400'}`}>© 2026 Kurs Saldo. All rights reserved.</p>
         <a
           href={PLAYSTORE_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 mt-3 text-xs text-indigo-500 hover:text-indigo-400 transition-colors"
+          className="inline-flex items-center gap-1.5 mt-3 text-xs sm:text-sm text-indigo-500 hover:text-indigo-400 transition-colors"
         >
           <Download className="w-3.5 h-3.5" />
           Download Aplikasi Android
@@ -890,8 +847,8 @@ function ModalHeader({ title, subtitle, onClose, dm }: { title: string; subtitle
       </div>
       <div className="flex items-start justify-between px-4 sm:px-6 py-3 sm:py-4">
         <div>
-          <h2 className="text-base sm:text-lg font-bold">{title}</h2>
-          {subtitle && <p className={`text-xs mt-0.5 ${dm ? 'text-slate-400' : 'text-slate-500'}`}>{subtitle}</p>}
+          <h2 className="text-base sm:text-xl font-bold">{title}</h2>
+          {subtitle && <p className={`text-xs sm:text-sm mt-0.5 ${dm ? 'text-slate-400' : 'text-slate-500'}`}>{subtitle}</p>}
         </div>
         <button onClick={onClose} className={`p-1.5 rounded-lg transition-colors ${dm ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
           <X className="w-4.5 h-4.5" />
@@ -911,7 +868,7 @@ function ModalSearch({ value, onChange, placeholder, dm }: { value: string; onCh
           placeholder={placeholder}
           value={value}
           onChange={e => onChange(e.target.value)}
-          className={`w-full pl-9 pr-4 py-2.5 rounded-xl border text-sm focus:outline-none
+          className={`w-full pl-9 pr-4 py-2.5 rounded-xl border text-sm sm:text-base focus:outline-none
             ${dm ? 'bg-slate-700 border-slate-600 placeholder-slate-500 focus:border-indigo-500 text-slate-100' : 'border-slate-200 focus:border-indigo-400'}`}
         />
       </div>
@@ -923,7 +880,7 @@ function ModalSpinner({ label, dm }: { label: string; dm: boolean }) {
   return (
     <div className="text-center py-16">
       <div className="inline-block w-9 h-9 border-[3px] border-indigo-500 border-t-transparent rounded-full animate-spin" />
-      <p className={`mt-3 text-xs ${dm ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p>
+      <p className={`mt-3 text-xs sm:text-sm ${dm ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p>
     </div>
   );
 }
@@ -931,8 +888,8 @@ function ModalSpinner({ label, dm }: { label: string; dm: boolean }) {
 function ModalError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="text-center py-12">
-      <p className="text-rose-500 text-sm font-medium">{message}</p>
-      <button onClick={onRetry} className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors">
+      <p className="text-rose-500 text-sm sm:text-base font-medium">{message}</p>
+      <button onClick={onRetry} className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs sm:text-sm font-medium transition-colors">
         Coba Lagi
       </button>
     </div>
