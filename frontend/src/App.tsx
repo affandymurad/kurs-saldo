@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, ChevronDown, Download, Copy, Check, Sun, Moon, X, RefreshCw, TrendingUp, Newspaper, Globe, FileJson, ArrowUp } from 'lucide-react';
+import { Search, Download, Copy, Check, Sun, Moon, X, RefreshCw, FileJson, ArrowUp } from 'lucide-react';
 
 // Asset imports — letakkan di frontend/src/assets/
 import cnbcLogo from './assets/cnbc_indonesia.svg';
@@ -38,6 +38,8 @@ interface KursPajakItem {
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const API_KEY = 'kurs-saldo-secret-key-2026';
 const PLAYSTORE_URL = 'https://play.google.com/store/apps/details?id=kurs.valuta.kurvasi';
+const ANDROID_LANDING_URL = 'https://kurs-saldo.netlify.app/android/';
+const ANDROID_BANNER_DISMISSED_KEY = 'androidAppBannerDismissed';
 
 const IC_KURS_SALDO = '/media/ic_kurs_saldo.png';
 const IC_AFFANDY = '/media/ic_affandy.svg';
@@ -59,9 +61,7 @@ export default function KursSaldo() {
   const [items, setItems] = useState<RSSItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<RSSItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedSource, setSelectedSource] = useState('Semua');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showSourceDropdown, setShowSourceDropdown] = useState(false);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -69,7 +69,6 @@ export default function KursSaldo() {
     }
     return false;
   });
-  const [topKeywords, setTopKeywords] = useState<{ word: string; count: number }[]>([]);
 
   const [showKursBI, setShowKursBI] = useState(false);
   const [kursBIData, setKursBIData] = useState<KursBIItem[] | null>(null);
@@ -93,19 +92,30 @@ export default function KursSaldo() {
 
   const [showScrollTop, setShowScrollTop] = useState(false);
 
+  const [showAndroidBanner, setShowAndroidBanner] = useState(false);
+
   useEffect(() => { fetchFeeds(); }, []);
-  useEffect(() => { filterItems(); }, [items, selectedSource, searchQuery]);
+  useEffect(() => { filterItems(); }, [items, searchQuery]);
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
-  useEffect(() => {
-    if (items.length > 0) extractTopKeywords();
-  }, [items]);
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 400);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+  useEffect(() => {
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    if (isAndroid && localStorage.getItem(ANDROID_BANNER_DISMISSED_KEY) !== 'true') {
+      setShowAndroidBanner(true);
+    }
+  }, []);
+
+  const openAndroidLanding = () => { window.location.href = ANDROID_LANDING_URL; };
+  const dismissAndroidBanner = () => {
+    setShowAndroidBanner(false);
+    localStorage.setItem(ANDROID_BANNER_DISMISSED_KEY, 'true');
+  };
 
   const fetchFeeds = async () => {
     try {
@@ -186,89 +196,8 @@ export default function KursSaldo() {
     URL.revokeObjectURL(url);
   };
 
-  const extractTopKeywords = () => {
-    const stopWords = new Set([
-      'gara','juta','video','jadi','tembus','harga','yang','dan','di','ke','dari','ini','itu','dengan','untuk','pada',
-      'adalah','akan','telah','atau','bisa','dapat','sudah','juga','oleh','dalam','tidak','ada','hal','saat','lebih',
-      'seperti','antara','karena','the','and','for','are','but','not','you','all','can','her','was','one','our','out',
-      'day','get','has','him','his','how','man','new','now','old','see','two','way','who','boy','did','its','let','put',
-      'say','she','too','use','sebagai','tersebut','bahwa','saya','kami','soal','buka','suara','kata','beri','usai',
-      'kali','per','hingga','agar','atas','bagi','pun','kini','masih','sekitar','bila','meski'
-    ]);
-
-    const documentNgrams: { [key: string]: Set<string> }[] = [];
-    const ngramData: { [key: string]: { tf: number; timeWeight: number; type: 'unigram' | 'bigram' } } = {};
-    const now = Date.now();
-
-    items.forEach(item => {
-      const itemTime = new Date(item.pubDate).getTime();
-      const hoursDiff = (now - itemTime) / (1000 * 60 * 60);
-      let timeWeight = hoursDiff > 24 ? 0.2 : hoursDiff > 12 ? 0.4 : hoursDiff > 6 ? 0.7 : 1.0;
-
-      const titleWords = item.title.toLowerCase()
-        .replace(/<!\[CDATA\[|\]\]>/g, '').replace(/[^\w\s]/g, ' ').split(/\s+/)
-        .filter(word => word.length > 2 && !stopWords.has(word));
-
-      const docNgrams = new Set<string>();
-
-      titleWords.forEach(word => {
-        if (word.length >= 4 && word.length <= 15) {
-          docNgrams.add(word);
-          if (!ngramData[word]) ngramData[word] = { tf: 0, timeWeight: 0, type: 'unigram' };
-          ngramData[word].tf += 1.0 * timeWeight;
-          ngramData[word].timeWeight += timeWeight;
-        }
-      });
-
-      for (let i = 0; i < titleWords.length - 1; i++) {
-        if (!stopWords.has(titleWords[i]) && !stopWords.has(titleWords[i + 1])) {
-          const bigram = `${titleWords[i]} ${titleWords[i + 1]}`;
-          const words = bigram.split(' ');
-          if (words.every(w => w.length >= 3 && w.length <= 15)) {
-            docNgrams.add(bigram);
-            if (!ngramData[bigram]) ngramData[bigram] = { tf: 0, timeWeight: 0, type: 'bigram' };
-            ngramData[bigram].tf += 1.3 * timeWeight;
-            ngramData[bigram].timeWeight += timeWeight;
-          }
-        }
-      }
-      documentNgrams.push({ [item.title]: docNgrams });
-    });
-
-    const totalDocs = items.length;
-    const ngramScores: { [key: string]: { score: number; type: string } } = {};
-
-    Object.entries(ngramData).forEach(([ngram, data]) => {
-      let docsWithNgram = 0;
-      documentNgrams.forEach(doc => {
-        Object.values(doc).forEach(ngramSet => { if (ngramSet.has(ngram)) docsWithNgram++; });
-      });
-      const idf = Math.log(totalDocs / (docsWithNgram + 1));
-      const tfidf = data.tf * idf;
-      const recencyBonus = data.timeWeight / Math.max(data.tf, 1);
-      const typeBonus = data.type === 'bigram' ? 1.3 : 1.0;
-      ngramScores[ngram] = { score: tfidf * (1 + recencyBonus) * typeBonus, type: data.type };
-    });
-
-    const sortedAll = Object.entries(ngramScores).sort(([, a], [, b]) => b.score - a.score);
-    const hasOverlap = (n1: string, n2: string) => {
-      const w1 = new Set(n1.split(' ')), w2 = new Set(n2.split(' '));
-      for (const w of w1) if (w2.has(w)) return true;
-      return false;
-    };
-
-    const selected: string[] = [];
-    for (const [ngram] of sortedAll) {
-      if (selected.length >= 10) break;
-      if (!selected.some(e => hasOverlap(e, ngram))) selected.push(ngram);
-    }
-
-    setTopKeywords(selected.slice(0, 10).map(word => ({ word, count: Math.round(ngramData[word].tf) })));
-  };
-
   const filterItems = () => {
     let filtered = [...items];
-    if (selectedSource !== 'Semua') filtered = filtered.filter(item => item.source === selectedSource);
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(item =>
@@ -289,8 +218,6 @@ export default function KursSaldo() {
     tmp.innerHTML = html;
     return tmp.textContent || tmp.innerText || '';
   };
-
-  const sources = ['Semua', 'Detik', 'Tempo', 'CNBC Indonesia'];
 
   const handleCopy = async (url: string) => {
     try {
@@ -316,6 +243,37 @@ export default function KursSaldo() {
 
   return (
     <div className={`min-h-screen font-sans transition-colors duration-300 ${dm ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+
+      {/* ── Android App Banner (mobile Android browser only) ──────────────────── */}
+      {showAndroidBanner && (
+        <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-3">
+            <button onClick={openAndroidLanding} className="flex items-center gap-2.5 flex-1 min-w-0 text-left">
+              <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shrink-0 overflow-hidden">
+                <img src={IC_KURS_SALDO} alt="Kurs Saldo" className="w-6 h-6 object-contain" />
+              </div>
+              <div className="min-w-0 leading-tight">
+                <p className="text-xs sm:text-sm font-bold truncate">Buka di Aplikasi Kurs Saldo</p>
+                <p className="text-[11px] sm:text-xs text-indigo-100 truncate">Lebih cepat & praktis di Android</p>
+              </div>
+            </button>
+            <button
+              onClick={openAndroidLanding}
+              className="shrink-0 bg-white text-indigo-600 text-xs sm:text-sm font-bold px-3 py-1.5 rounded-full"
+            >
+              Buka
+            </button>
+            <button
+              onClick={dismissAndroidBanner}
+              aria-label="Tutup"
+              title="Tutup"
+              className="shrink-0 p-1 text-indigo-100 hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <header className={`sticky top-0 z-30 ${dm ? 'bg-slate-900/95 border-b border-slate-700/60' : 'bg-white/95 border-b border-slate-200'} backdrop-blur-md`}>
@@ -448,81 +406,6 @@ export default function KursSaldo() {
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Refresh</span>
             </button>
-          </div>
-
-          {/* Top Keywords + Source Dropdown */}
-          <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
-            {topKeywords.length > 0 && (
-              <div className="flex-1 min-w-0">
-                <p className={`text-xs sm:text-sm font-semibold uppercase tracking-wider mb-2.5 flex items-center gap-1.5 ${dm ? 'text-slate-400' : 'text-slate-500'}`}>
-                  <TrendingUp className="w-3.5 h-3.5" /> Topik Populer
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {topKeywords.map((kw, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setSearchQuery(kw.word)}
-                      className={`px-2.5 py-1 rounded-lg text-xs sm:text-sm font-medium transition-all border
-                        ${searchQuery === kw.word
-                          ? 'bg-indigo-600 text-white border-indigo-600'
-                          : dm
-                            ? 'bg-slate-700 border-slate-600 text-slate-300 hover:border-indigo-500 hover:text-indigo-300'
-                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-indigo-400 hover:text-indigo-600'
-                        }`}
-                    >
-                      #{kw.word}
-                      <span className={`ml-1 ${searchQuery === kw.word ? 'text-indigo-200' : dm ? 'text-slate-500' : 'text-slate-400'}`}>
-                        {kw.count}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Source Dropdown */}
-            <div className="relative shrink-0">
-              <button
-                onClick={() => setShowSourceDropdown(!showSourceDropdown)}
-                className={`w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2 text-sm sm:text-base font-medium px-3.5 py-2.5 rounded-xl border transition-colors
-                  ${selectedSource !== 'Semua'
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : dm
-                      ? 'bg-slate-700 border-slate-600 text-slate-200'
-                      : 'bg-white border-slate-200 text-slate-700'
-                  }`}
-              >
-                <span className="flex items-center gap-2">
-                  <Globe className="w-4 h-4" />
-                  {selectedSource === 'Semua' ? 'Semua Sumber' : selectedSource}
-                </span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showSourceDropdown ? 'rotate-180' : ''}`} />
-              </button>
-
-              {showSourceDropdown && (
-                <div className={`absolute top-full mt-1.5 right-0 z-20 w-full sm:min-w-[180px] rounded-xl shadow-xl border overflow-hidden
-                  ${dm ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-                  {sources.map(source => (
-                    <button
-                      key={source}
-                      onClick={() => { setSelectedSource(source); setShowSourceDropdown(false); }}
-                      className={`flex items-center gap-2.5 w-full text-left px-4 py-3 text-sm sm:text-base transition-colors
-                        ${selectedSource === source
-                          ? dm ? 'bg-indigo-600/20 text-indigo-300' : 'bg-indigo-50 text-indigo-700'
-                          : dm ? 'hover:bg-slate-700 text-slate-200' : 'hover:bg-slate-50 text-slate-700'
-                        }`}
-                    >
-                      {SOURCE_LOGOS[source] ? (
-                        <img src={SOURCE_LOGOS[source]} alt={source} className="w-4 h-4 object-contain" />
-                      ) : (
-                        <Newspaper className="w-4 h-4 opacity-50" />
-                      )}
-                      {source}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         </div>
 

@@ -7,6 +7,16 @@
   <meta name="robots" content="noindex" />
   <link rel="icon" type="image/png" href="/media/ic_kurs_saldo.png" />
   <title>Disclaimer Aplikasi — Kurs Saldo</title>
+  <script>
+    (function () {
+      var PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=kurs.valuta.kurvasi';
+      if (/Android/i.test(navigator.userAgent)) {
+        setTimeout(function () {
+          window.location.href = PLAY_STORE_URL;
+        }, 1000);
+      }
+    })();
+  </script>
   <style>
     :root {
       --bg: #f8fafc;
