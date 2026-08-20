@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "kurs.valuta.kurvasi",
+      "sha256_cert_fingerprints": [
+        "99:E2:6F:6D:4C:36:0F:D4:EA:FB:2C:1F:BF:8E:6C:DF:93:EA:2E:D4:54:4C:F4:48:DC:C4:C7:C2:B0:AD:6D:56"
+      ]
+    }
+  }
+]

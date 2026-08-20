@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/png" href="/media/ic_kurs_saldo.png" />
+  <title>Disclaimer Aplikasi — Kurs Saldo</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --bg-gradient-to: #f1f5f9;
+      --surface: #ffffff;
+      --header-bg: #ffe4e6;
+      --text-primary: #1e293b;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --footer-bg: #1e293b;
+      --footer-text: #94a3b8;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --bg-gradient-to: #0f172a;
+        --surface: #1e293b;
+        --header-bg: #1e293b;
+        --text-primary: #f1f5f9;
+        --text-secondary: #cbd5e1;
+        --text-muted: #94a3b8;
+        --border: #334155;
+        --accent: #60a5fa;
+        --accent-soft: #1e3a5f;
+        --footer-bg: #1e293b;
+        --footer-text: #94a3b8;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: linear-gradient(to bottom right, var(--bg), var(--bg-gradient-to));
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+        Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      line-height: 1.6;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .header {
+      background: var(--header-bg);
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+    }
+
+    .header-inner {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 28px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .logo img { width: 38px; height: 38px; object-fit: contain; }
+
+    .header-title h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+
+    .header-title p {
+      margin: 2px 0 0;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    main {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 36px 20px 60px;
+    }
+
+    .intro {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      margin-bottom: 28px;
+      box-shadow: 0 10px 25px -8px rgba(0,0,0,0.08);
+    }
+
+    .intro h2 {
+      margin: 0 0 10px;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .intro p {
+      margin: 0 0 10px;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .intro p:last-child { margin-bottom: 0; }
+
+    .updated {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      background: var(--accent-soft);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin: 0 0 14px 4px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 6px 16px -8px rgba(0,0,0,0.08);
+    }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 1.02rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card h3 .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .card p {
+      margin: 0;
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+    }
+
+    .card p + p { margin-top: 8px; }
+
+    .general {
+      margin-top: 28px;
+    }
+
+    .general ol {
+      margin: 0;
+      padding-left: 22px;
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+    }
+
+    .general li { margin-bottom: 10px; }
+    .general li:last-child { margin-bottom: 0; }
+
+    .contact {
+      margin-top: 28px;
+      padding: 22px 24px;
+      border-radius: 18px;
+      background: var(--accent-soft);
+      border: 1px solid var(--border);
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+    }
+
+    .contact strong { color: var(--text-primary); }
+
+    footer {
+      background: var(--footer-bg);
+      color: var(--footer-text);
+      padding: 28px 20px;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+
+    footer a { color: #93c5fd; }
+
+    footer .back {
+      display: inline-block;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <img src="/media/ic_kurs_saldo.png" alt="Kurs Saldo" />
+      </div>
+      <div class="header-title">
+        <h1>Kurs Saldo</h1>
+        <p>Disclaimer &amp; Ketentuan Penggunaan Aplikasi</p>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <section class="intro">
+      <h2>Pemberitahuan</h2>
+      <p>
+        Halaman ini menjelaskan batasan tanggung jawab (disclaimer) atas informasi dan fitur yang
+        disediakan oleh aplikasi Android <strong>Kurs Saldo</strong>. Dengan mengunduh, memasang,
+        atau menggunakan aplikasi ini, pengguna dianggap telah membaca, memahami, dan menyetujui
+        ketentuan yang tercantum pada halaman ini.
+      </p>
+      <p>
+        Kurs Saldo merupakan aplikasi independen yang dikembangkan untuk memudahkan masyarakat
+        memantau informasi kurs, berita ekonomi, saldo kartu uang elektronik, dan kalender hari
+        libur nasional secara ringkas dalam satu aplikasi.
+      </p>
+      <span class="updated">Terakhir diperbarui: 2026</span>
+    </section>
+
+    <p class="section-label">Fitur &amp; Batasan Tanggung Jawab</p>
+
+    <div class="card">
+      <h3><span class="badge">BI</span> Kurs Bank Indonesia</h3>
+      <p>
+        Data kurs transaksi Bank Indonesia (kurs jual, beli, dan tengah) yang ditampilkan diambil
+        dari sumber resmi Bank Indonesia dan disajikan kembali (mirror) untuk kemudahan akses.
+      </p>
+      <p>
+        Data dapat mengalami keterlambatan pembaruan dan tidak dimaksudkan sebagai acuan transaksi
+        real-time. Untuk kepentingan transaksi resmi, silakan merujuk langsung ke sumber resmi Bank
+        Indonesia di
+        <a href="https://www.bi.go.id/id/statistik/informasi-kurs/transaksi-bi/default.aspx" target="_blank" rel="noopener noreferrer">bi.go.id</a>.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3><span class="badge">Pjk</span> Kurs Pajak</h3>
+      <p>
+        Data Kurs Menteri Keuangan (Kurs Pajak) yang ditampilkan diambil dari sumber resmi
+        Kementerian Keuangan Republik Indonesia dan berlaku untuk periode tertentu sesuai keputusan
+        resmi instansi terkait.
+      </p>
+      <p>
+        Aplikasi ini tidak menjamin kesesuaian data secara real-time dengan sumber resminya. Untuk
+        keperluan perpajakan resmi, silakan merujuk pada
+        <a href="https://fiskal.kemenkeu.go.id/informasi-publik/kurs-pajak" target="_blank" rel="noopener noreferrer">fiskal.kemenkeu.go.id</a>.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3><span class="badge">📄</span> Cetak PDF Kurs &amp; Riwayat</h3>
+      <p>
+        Fitur ekspor/cetak PDF menghasilkan dokumen ringkasan berdasarkan data yang tersimpan atau
+        ditampilkan pada saat dokumen dibuat, dan bukan merupakan dokumen resmi yang diterbitkan
+        oleh Bank Indonesia, Kementerian Keuangan, maupun penerbit kartu uang elektronik.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3><span class="badge">📰</span> Berita Ekonomi Nasional</h3>
+      <p>
+        Umpan (feed) berita ekonomi yang ditampilkan bersumber dari kanal RSS media pihak ketiga
+        (termasuk namun tidak terbatas pada Detik, Tempo, dan CNBC Indonesia). Judul, isi, gambar,
+        dan tautan artikel adalah hak cipta dan tanggung jawab penuh masing-masing penerbit berita.
+      </p>
+      <p>
+        Kurs Saldo hanya berfungsi sebagai agregator/penampil tautan dan tidak mengubah, menyunting,
+        maupun bertanggung jawab atas keakuratan konten berita yang ditampilkan.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3><span class="badge">KUE</span> Pengecekan Saldo Kartu Uang Elektronik (NFC)</h3>
+      <p>
+        Fitur ini membaca data yang tersimpan pada chip kartu uang elektronik secara lokal melalui
+        teknologi NFC pada perangkat pengguna. Nilai saldo yang ditampilkan adalah hasil pembacaan
+        data terakhir yang tersimpan di kartu, bukan hasil pengecekan langsung (real-time) ke server
+        bank/penerbit kartu.
+      </p>
+      <p>
+        Saldo aktual dapat berbeda apabila kartu telah digunakan untuk transaksi setelah data
+        terakhir tersimpan di kartu namun belum tersinkronisasi. Untuk kepastian saldo dan mutasi
+        transaksi resmi, pengguna disarankan memeriksa melalui aplikasi resmi, mesin EDC, atau
+        gerai resmi penerbit kartu terkait.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3><span class="badge">📅</span> Kalender Hari Libur Nasional</h3>
+      <p>
+        Informasi hari libur nasional dan cuti bersama disusun berdasarkan Surat Keputusan Bersama
+        (SKB) Menteri yang berlaku pada saat data disusun. Pemerintah dapat mengubah, menambah, atau
+        membatalkan penetapan hari libur/cuti bersama sewaktu-waktu.
+      </p>
+      <p>
+        Pengguna disarankan untuk mengecek pengumuman resmi pemerintah sebagai referensi utama
+        sebelum membuat keputusan yang berkaitan dengan hari libur nasional.
+      </p>
+    </div>
+
+    <div class="general">
+      <p class="section-label">Ketentuan Umum</p>
+      <ol>
+        <li>
+          Kurs Saldo bukan merupakan aplikasi resmi dan tidak berafiliasi dengan Bank Indonesia,
+          Kementerian Keuangan Republik Indonesia, bank, maupun penerbit kartu uang elektronik
+          mana pun.
+        </li>
+        <li>
+          Seluruh data, informasi, dan konten disajikan sebagaimana adanya ("as is") tanpa jaminan
+          dalam bentuk apa pun, baik tersurat maupun tersirat, termasuk namun tidak terbatas pada
+          jaminan keakuratan, kelengkapan, ketepatan waktu, atau kesesuaian untuk tujuan tertentu.
+        </li>
+        <li>
+          Pengembang aplikasi tidak bertanggung jawab atas segala kerugian, baik langsung maupun
+          tidak langsung, yang timbul akibat penggunaan, ketergantungan, atau ketidaktersediaan
+          data dan fitur dalam aplikasi ini.
+        </li>
+        <li>
+          Aplikasi ini tidak dimaksudkan sebagai nasihat keuangan, investasi, maupun perpajakan.
+          Pengguna disarankan berkonsultasi dengan pihak/instansi resmi yang berwenang untuk
+          keputusan penting terkait keuangan, perpajakan, atau transaksi resmi.
+        </li>
+        <li>
+          Ketentuan pada halaman ini dapat diperbarui sewaktu-waktu tanpa pemberitahuan sebelumnya
+          mengikuti perubahan fitur aplikasi.
+        </li>
+      </ol>
+    </div>
+
+    <div class="contact">
+      <strong>Pertanyaan atau masukan?</strong><br />
+      Hubungi pengembang melalui halaman
+      <a href="https://affandymurad.github.io" target="_blank" rel="noopener noreferrer">affandymurad.github.io</a>
+      atau melalui menu "Hubungi Kami" pada tab Setelan di aplikasi.
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2026 Kurs Saldo. All rights reserved.</p>
+    <a class="back" href="/">← Kembali ke Kurs Saldo Web</a>
+  </footer>
+
+</body>
+
+</html>
