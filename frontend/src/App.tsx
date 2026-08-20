@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Download, Copy, Check, Sun, Moon, X, RefreshCw, FileJson, ArrowUp } from 'lucide-react';
+import { Search, Download, Copy, Check, Sun, Moon, X, RefreshCw, FileJson, CalendarDays, ArrowUp } from 'lucide-react';
 
 // Asset imports — letakkan di frontend/src/assets/
 import cnbcLogo from './assets/cnbc_indonesia.svg';
@@ -41,7 +41,6 @@ const ANDROID_LANDING_URL = 'https://kurs-saldo.netlify.app/android/';
 const ANDROID_BANNER_DISMISSED_KEY = 'androidAppBannerDismissed';
 
 const IC_KURS_SALDO = '/media/ic_kurs_saldo.png';
-const IC_AFFANDY = '/media/ic_affandy.svg';
 const IC_KURS_BI = '/media/ic_kurs_bi.png';
 const IC_KURS_PAJAK = '/media/ic_kurs_pajak.ico';
 
@@ -289,24 +288,11 @@ export default function KursSaldo() {
                 </div>
                 <div className="leading-tight min-w-0">
                   <p className="font-bold text-base sm:text-lg tracking-tight">Kurs Saldo</p>
-                  <p className={`text-xs sm:text-base ${dm ? 'text-slate-400' : 'text-slate-500'}`}>Berita ekonomi, kurs BI & Pajak, cek saldo KUE via NFC, dan kalender libur nasional dalam satu aplikasi</p>
+                  <p className={`text-xs sm:text-base ${dm ? 'text-slate-400' : 'text-slate-500'}`}>Berita ekonomi, kurs BI & Pajak, dan kalender libur nasional dalam satu aplikasi</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-1.5 shrink-0">
-                {/* Affandy — icon only on mobile, full label on lg+ */}
-                <a
-                  href="https://affandymurad.github.io"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Affandy Murad"
-                  className={`flex items-center gap-1.5 text-base sm:text-lg font-medium px-2 py-1.5 rounded-lg transition-colors
-                    ${dm ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'}`}
-                >
-                  <img src={IC_AFFANDY} alt="Affandy" className="w-5 h-5 shrink-0" />
-                  <span className="hidden lg:inline">Affandy Murad</span>
-                </a>
-
                 <button
                   onClick={() => setDarkMode(!dm)}
                   className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors
@@ -338,6 +324,17 @@ export default function KursSaldo() {
                 Kurs Pajak
               </button>
 
+              <a
+                href="https://affandymurad.github.io/2026/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`flex items-center gap-1.5 text-sm sm:text-base font-semibold whitespace-nowrap px-3 py-2 rounded-xl border transition-colors shrink-0
+                  ${dm ? 'bg-slate-800 border-slate-700 text-slate-200 active:bg-slate-700' : 'bg-slate-50 border-slate-200 text-slate-700 active:bg-slate-100'}`}
+              >
+                <CalendarDays className="w-4 h-4" />
+                Kalender 2026
+              </a>
+
               <button
                 onClick={() => { setShowList(true); fetchList(); }}
                 className={`flex items-center gap-1.5 text-sm sm:text-base font-semibold whitespace-nowrap px-3 py-2 rounded-xl border transition-colors shrink-0
@@ -346,14 +343,6 @@ export default function KursSaldo() {
                 <FileJson className="w-4 h-4" />
                 Ekspor JSON
               </button>
-
-              {/* Spacer to push count to the right */}
-              <span className="flex-1" />
-
-              <span className={`text-xs sm:text-base font-medium whitespace-nowrap shrink-0 px-2.5 py-1.5 rounded-lg
-                ${dm ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
-                {filteredItems.length}/{items.length} berita
-              </span>
             </div>
 
           </div>
