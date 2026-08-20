@@ -282,18 +282,18 @@ export default function KursSaldo() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             {/* Row 1: Brand + dark toggle + install */}
-            <div className="flex items-center justify-between h-14 gap-3">
-              <div className="flex items-center gap-2.5 shrink-0">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center overflow-hidden shadow ${dm ? 'bg-slate-700' : 'bg-indigo-50'}`}>
+            <div className="flex items-center justify-between gap-3 py-2.5">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center overflow-hidden shadow shrink-0 ${dm ? 'bg-slate-700' : 'bg-indigo-50'}`}>
                   <img src={IC_KURS_SALDO} alt="Kurs Saldo" className="w-6 h-6 object-contain" />
                 </div>
-                <div className="leading-tight">
+                <div className="leading-tight min-w-0">
                   <p className="font-bold text-base sm:text-lg tracking-tight">Kurs Saldo</p>
-                  <p className={`text-xs sm:text-base ${dm ? 'text-slate-400' : 'text-slate-500'}`}>Berita Ekonomi & Kurs</p>
+                  <p className={`text-xs sm:text-base ${dm ? 'text-slate-400' : 'text-slate-500'}`}>Berita ekonomi, kurs BI & Pajak, cek saldo KUE via NFC, dan kalender libur nasional dalam satu aplikasi</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 shrink-0">
                 {/* Affandy — icon only on mobile, full label on lg+ */}
                 <a
                   href="https://affandymurad.github.io"
