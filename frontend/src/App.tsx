@@ -5,7 +5,6 @@ import { Search, Download, Copy, Check, Sun, Moon, X, RefreshCw, FileJson, Arrow
 import cnbcLogo from './assets/cnbc_indonesia.svg';
 import detikLogo from './assets/detikcom.png';
 import tempoLogo from './assets/tempo.png';
-import androidIcon from './assets/android.svg';
 
 interface RSSItem {
   title: string;
@@ -244,130 +243,122 @@ export default function KursSaldo() {
   return (
     <div className={`min-h-screen font-sans transition-colors duration-300 ${dm ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
 
-      {/* ── Android App Banner (mobile Android browser only) ──────────────────── */}
-      {showAndroidBanner && (
-        <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-3">
-            <button onClick={openAndroidLanding} className="flex items-center gap-2.5 flex-1 min-w-0 text-left">
-              <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shrink-0 overflow-hidden">
-                <img src={IC_KURS_SALDO} alt="Kurs Saldo" className="w-6 h-6 object-contain" />
-              </div>
-              <div className="min-w-0 leading-tight">
-                <p className="text-xs sm:text-sm font-bold truncate">Buka di Aplikasi Kurs Saldo</p>
-                <p className="text-[11px] sm:text-xs text-indigo-100 truncate">Lebih cepat & praktis di Android</p>
-              </div>
-            </button>
-            <button
-              onClick={openAndroidLanding}
-              className="shrink-0 bg-white text-indigo-600 text-xs sm:text-sm font-bold px-3 py-1.5 rounded-full"
-            >
-              Buka
-            </button>
-            <button
-              onClick={dismissAndroidBanner}
-              aria-label="Tutup"
-              title="Tutup"
-              className="shrink-0 p-1 text-indigo-100 hover:text-white transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
+      {/* ── Sticky top group: Android banner + Header ──────────────────────── */}
+      <div className="sticky top-0 z-30">
+
+        {/* Android App Banner (mobile Android browser only) */}
+        {showAndroidBanner && (
+          <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 text-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-3">
+              <button onClick={openAndroidLanding} className="flex items-center gap-2.5 flex-1 min-w-0 text-left">
+                <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shrink-0 overflow-hidden">
+                  <img src={IC_KURS_SALDO} alt="Kurs Saldo" className="w-6 h-6 object-contain" />
+                </div>
+                <div className="min-w-0 leading-tight">
+                  <p className="text-sm sm:text-base font-bold truncate">Buka di Aplikasi Kurs Saldo</p>
+                  <p className="text-xs sm:text-sm text-indigo-100 truncate">Lebih cepat & praktis di Android</p>
+                </div>
+              </button>
+              <button
+                onClick={openAndroidLanding}
+                className="shrink-0 bg-white text-indigo-600 text-sm sm:text-base font-bold px-3 py-1.5 rounded-full"
+              >
+                Buka
+              </button>
+              <button
+                onClick={dismissAndroidBanner}
+                aria-label="Tutup"
+                title="Tutup"
+                className="shrink-0 p-1 text-indigo-100 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <header className={`sticky top-0 z-30 ${dm ? 'bg-slate-900/95 border-b border-slate-700/60' : 'bg-white/95 border-b border-slate-200'} backdrop-blur-md`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <header className={`${dm ? 'bg-slate-900/95 border-b border-slate-700/60' : 'bg-white/95 border-b border-slate-200'} backdrop-blur-md`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-          {/* Row 1: Brand + dark toggle + install */}
-          <div className="flex items-center justify-between h-14 gap-3">
-            <div className="flex items-center gap-2.5 shrink-0">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center overflow-hidden shadow ${dm ? 'bg-slate-700' : 'bg-indigo-50'}`}>
-                <img src={IC_KURS_SALDO} alt="Kurs Saldo" className="w-6 h-6 object-contain" />
+            {/* Row 1: Brand + dark toggle + install */}
+            <div className="flex items-center justify-between h-14 gap-3">
+              <div className="flex items-center gap-2.5 shrink-0">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center overflow-hidden shadow ${dm ? 'bg-slate-700' : 'bg-indigo-50'}`}>
+                  <img src={IC_KURS_SALDO} alt="Kurs Saldo" className="w-6 h-6 object-contain" />
+                </div>
+                <div className="leading-tight">
+                  <p className="font-bold text-base sm:text-lg tracking-tight">Kurs Saldo</p>
+                  <p className={`text-xs sm:text-base ${dm ? 'text-slate-400' : 'text-slate-500'}`}>Berita Ekonomi & Kurs</p>
+                </div>
               </div>
-              <div className="leading-tight">
-                <p className="font-bold text-sm sm:text-base tracking-tight">Kurs Saldo</p>
-                <p className={`text-[11px] sm:text-sm ${dm ? 'text-slate-400' : 'text-slate-500'}`}>Berita Ekonomi & Kurs</p>
+
+              <div className="flex items-center gap-1.5">
+                {/* Affandy — icon only on mobile, full label on lg+ */}
+                <a
+                  href="https://affandymurad.github.io"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Affandy Murad"
+                  className={`flex items-center gap-1.5 text-base sm:text-lg font-medium px-2 py-1.5 rounded-lg transition-colors
+                    ${dm ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'}`}
+                >
+                  <img src={IC_AFFANDY} alt="Affandy" className="w-5 h-5 shrink-0" />
+                  <span className="hidden lg:inline">Affandy Murad</span>
+                </a>
+
+                <button
+                  onClick={() => setDarkMode(!dm)}
+                  className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors
+                    ${dm ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'}`}
+                  title={dm ? 'Mode Terang' : 'Mode Gelap'}
+                >
+                  {dm ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
+                </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
-              {/* Affandy — icon only on mobile, full label on lg+ */}
-              <a
-                href="https://affandymurad.github.io"
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Affandy Murad"
-                className={`flex items-center gap-1.5 text-sm sm:text-base font-medium px-2 py-1.5 rounded-lg transition-colors
-                  ${dm ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'}`}
-              >
-                <img src={IC_AFFANDY} alt="Affandy" className="w-5 h-5 shrink-0" />
-                <span className="hidden lg:inline">Affandy Murad</span>
-              </a>
-
+            {/* Row 2: Kurs action buttons — full-width pill row on mobile */}
+            <div className={`flex items-center gap-2 pb-2.5 overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0`}>
               <button
-                onClick={() => setDarkMode(!dm)}
-                className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors
-                  ${dm ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-slate-100 text-slate-600'}`}
-                title={dm ? 'Mode Terang' : 'Mode Gelap'}
+                onClick={() => { setShowKursBI(true); setKursBISearch(''); fetchKursBI(); }}
+                className={`flex items-center gap-1.5 text-sm sm:text-base font-semibold whitespace-nowrap px-3 py-2 rounded-xl border transition-colors shrink-0
+                  ${dm ? 'bg-slate-800 border-slate-700 text-slate-200 active:bg-slate-700' : 'bg-slate-50 border-slate-200 text-slate-700 active:bg-slate-100'}`}
               >
-                {dm ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
+                <img src={IC_KURS_BI} alt="BI" className="w-4 h-4 object-contain" />
+                Kurs BI
               </button>
 
-              <a
-                href={PLAYSTORE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Install di Android"
-                className="flex items-center gap-1.5 bg-indigo-600 active:bg-indigo-800 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl transition-colors shadow-sm"
+              <button
+                onClick={() => { setShowKursPajak(true); setKursPajakSearch(''); fetchKursPajak(); }}
+                className={`flex items-center gap-1.5 text-sm sm:text-base font-semibold whitespace-nowrap px-3 py-2 rounded-xl border transition-colors shrink-0
+                  ${dm ? 'bg-slate-800 border-slate-700 text-slate-200 active:bg-slate-700' : 'bg-slate-50 border-slate-200 text-slate-700 active:bg-slate-100'}`}
               >
-                {/* Android icon from assets */}
-                <img src={androidIcon} alt="" className="w-3.5 h-3.5" />
-                <span>Install</span>
-              </a>
+                <img src={IC_KURS_PAJAK} alt="Pajak" className="w-4 h-4 object-contain" />
+                Kurs Pajak
+              </button>
+
+              <button
+                onClick={() => { setShowList(true); fetchList(); }}
+                className={`flex items-center gap-1.5 text-sm sm:text-base font-semibold whitespace-nowrap px-3 py-2 rounded-xl border transition-colors shrink-0
+                  ${dm ? 'bg-slate-800 border-slate-700 text-emerald-400 active:bg-slate-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700 active:bg-emerald-100'}`}
+              >
+                <FileJson className="w-4 h-4" />
+                Ekspor JSON
+              </button>
+
+              {/* Spacer to push count to the right */}
+              <span className="flex-1" />
+
+              <span className={`text-xs sm:text-base font-medium whitespace-nowrap shrink-0 px-2.5 py-1.5 rounded-lg
+                ${dm ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
+                {filteredItems.length}/{items.length} berita
+              </span>
             </div>
+
           </div>
-
-          {/* Row 2: Kurs action buttons — full-width pill row on mobile */}
-          <div className={`flex items-center gap-2 pb-2.5 overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0`}>
-            <button
-              onClick={() => { setShowKursBI(true); setKursBISearch(''); fetchKursBI(); }}
-              className={`flex items-center gap-1.5 text-xs sm:text-sm font-semibold whitespace-nowrap px-3 py-2 rounded-xl border transition-colors shrink-0
-                ${dm ? 'bg-slate-800 border-slate-700 text-slate-200 active:bg-slate-700' : 'bg-slate-50 border-slate-200 text-slate-700 active:bg-slate-100'}`}
-            >
-              <img src={IC_KURS_BI} alt="BI" className="w-4 h-4 object-contain" />
-              Kurs BI
-            </button>
-
-            <button
-              onClick={() => { setShowKursPajak(true); setKursPajakSearch(''); fetchKursPajak(); }}
-              className={`flex items-center gap-1.5 text-xs sm:text-sm font-semibold whitespace-nowrap px-3 py-2 rounded-xl border transition-colors shrink-0
-                ${dm ? 'bg-slate-800 border-slate-700 text-slate-200 active:bg-slate-700' : 'bg-slate-50 border-slate-200 text-slate-700 active:bg-slate-100'}`}
-            >
-              <img src={IC_KURS_PAJAK} alt="Pajak" className="w-4 h-4 object-contain" />
-              Kurs Pajak
-            </button>
-
-            <button
-              onClick={() => { setShowList(true); fetchList(); }}
-              className={`flex items-center gap-1.5 text-xs sm:text-sm font-semibold whitespace-nowrap px-3 py-2 rounded-xl border transition-colors shrink-0
-                ${dm ? 'bg-slate-800 border-slate-700 text-emerald-400 active:bg-slate-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700 active:bg-emerald-100'}`}
-            >
-              <FileJson className="w-4 h-4" />
-              Ekspor JSON
-            </button>
-
-            {/* Spacer to push count to the right */}
-            <span className="flex-1" />
-
-            <span className={`text-[11px] sm:text-sm font-medium whitespace-nowrap shrink-0 px-2.5 py-1.5 rounded-lg
-              ${dm ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
-              {filteredItems.length}/{items.length} berita
-            </span>
-          </div>
-
-        </div>
-      </header>
+        </header>
+      </div>
 
       {/* ── Main ────────────────────────────────────────────────────────────── */}
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
