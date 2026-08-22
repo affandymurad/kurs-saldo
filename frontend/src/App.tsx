@@ -9,6 +9,7 @@ import type { KursBIItem, KursPajakItem } from './types';
 import cnbcLogo from './assets/cnbc_indonesia.svg';
 import detikLogo from './assets/detikcom.png';
 import tempoLogo from './assets/tempo.png';
+import googlePlayBadge from './assets/googleplay-badge.png';
 
 interface RSSItem {
   title: string;
@@ -302,6 +303,15 @@ export default function KursSaldo() {
               >
                 <CalendarDays className="w-4 h-4" />
                 Kalender 2026
+              </a>
+
+              <a
+                href={PLAYSTORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center shrink-0 h-14 sm:h-20 -my-2.5 sm:-my-5"
+              >
+                <img src={googlePlayBadge} alt="Dapatkan di Google Play" className="h-full w-auto object-contain" />
               </a>
             </div>
 
