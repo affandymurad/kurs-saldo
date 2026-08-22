@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Download, Copy, Check, Sun, Moon, X, RefreshCw, FileJson, CalendarDays, ArrowUp } from 'lucide-react';
+import { Search, Download, Copy, Check, Sun, Moon, X, RefreshCw, CalendarDays, ArrowUp, FileDown, Loader2 } from 'lucide-react';
+import 'flag-icons/css/flag-icons.min.css';
+import { flagClass, formatNilai } from './currency';
+import { generateKursBiPdf, generateKursPajakPdf } from './pdf';
+import type { KursBIItem, KursPajakItem } from './types';
 
 // Asset imports — letakkan di frontend/src/assets/
 import cnbcLogo from './assets/cnbc_indonesia.svg';
@@ -16,22 +20,6 @@ interface RSSItem {
   logo: string;
   logoUrl: string;
   language: string;
-}
-
-interface KursBIItem {
-  mataUang: string;
-  nilai: string;
-  kursJual: string;
-  kursBeli: string;
-  kursTengah: string;
-}
-
-interface KursPajakItem {
-  mataUang: string;
-  mataUangName: string;
-  nilai: string;
-  kurs: string;
-  perubahan: string;
 }
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -74,6 +62,7 @@ export default function KursSaldo() {
   const [kursBILoading, setKursBILoading] = useState(false);
   const [kursBIError, setKursBIError] = useState('');
   const [kursBISearch, setKursBISearch] = useState('');
+  const [kursBIPdfLoading, setKursBIPdfLoading] = useState(false);
 
   const [showKursPajak, setShowKursPajak] = useState(false);
   const [kursPajakData, setKursPajakData] = useState<KursPajakItem[] | null>(null);
@@ -81,12 +70,7 @@ export default function KursSaldo() {
   const [kursPajakLoading, setKursPajakLoading] = useState(false);
   const [kursPajakError, setKursPajakError] = useState('');
   const [kursPajakSearch, setKursPajakSearch] = useState('');
-
-  const [showList, setShowList] = useState(false);
-  const [listLoading, setListLoading] = useState(false);
-  const [listError, setListError] = useState('');
-  const [listCopied, setListCopied] = useState(false);
-  const [listJson, setListJson] = useState<string>('');
+  const [kursPajakPdfLoading, setKursPajakPdfLoading] = useState(false);
 
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -155,43 +139,28 @@ export default function KursSaldo() {
     finally { setKursPajakLoading(false); }
   };
 
-  const fetchList = async () => {
-    setListLoading(true);
-    setListError('');
-    setListJson('');
+  const handleDownloadKursBIPdf = async () => {
+    if (!kursBIData) return;
+    setKursBIPdfLoading(true);
     try {
-      const response = await fetch(`${API_URL}/list`, {
-        headers: { 'X-API-Key': API_KEY }
-      });
-      const data = await response.json();
-      if (data.success) {
-        setListJson(JSON.stringify(data, null, 2));
-      } else {
-        setListError(data.error || 'Gagal memuat data');
-      }
-    } catch {
-      setListError('Tidak dapat terhubung ke server');
+      await generateKursBiPdf(kursBIData, kursBITanggal);
+    } catch (error) {
+      console.error('Gagal membuat PDF Kurs BI:', error);
     } finally {
-      setListLoading(false);
+      setKursBIPdfLoading(false);
     }
   };
 
-  const handleCopyList = async () => {
+  const handleDownloadKursPajakPdf = async () => {
+    if (!kursPajakData) return;
+    setKursPajakPdfLoading(true);
     try {
-      await navigator.clipboard.writeText(listJson);
-      setListCopied(true);
-      setTimeout(() => setListCopied(false), 2000);
-    } catch { /* ignore */ }
-  };
-
-  const handleDownloadList = () => {
-    const blob = new Blob([listJson], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `berita-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+      await generateKursPajakPdf(kursPajakData, kursPajakTanggal);
+    } catch (error) {
+      console.error('Gagal membuat PDF Kurs Pajak:', error);
+    } finally {
+      setKursPajakPdfLoading(false);
+    }
   };
 
   const filterItems = () => {
@@ -334,15 +303,6 @@ export default function KursSaldo() {
                 <CalendarDays className="w-4 h-4" />
                 Kalender 2026
               </a>
-
-              <button
-                onClick={() => { setShowList(true); fetchList(); }}
-                className={`flex items-center gap-1.5 text-sm sm:text-base font-semibold whitespace-nowrap px-3 py-2 rounded-xl border transition-colors shrink-0
-                  ${dm ? 'bg-slate-800 border-slate-700 text-emerald-400 active:bg-slate-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700 active:bg-emerald-100'}`}
-              >
-                <FileJson className="w-4 h-4" />
-                Ekspor JSON
-              </button>
             </div>
 
           </div>
@@ -496,8 +456,18 @@ export default function KursSaldo() {
       {/* ── Modal Kurs BI ───────────────────────────────────────────────────── */}
       {showKursBI && (
         <ModalOverlay onClose={() => setShowKursBI(false)} dm={dm}>
-          <ModalHeader title="Kurs Transaksi Bank Indonesia" subtitle={kursBITanggal ? `Update: ${kursBITanggal}` : ''} onClose={() => setShowKursBI(false)} dm={dm} />
-          <ModalSearch value={kursBISearch} onChange={setKursBISearch} placeholder="Cari mata uang..." dm={dm} />
+          <ModalHeader
+            title="Kurs Transaksi Bank Indonesia"
+            subtitle={kursBITanggal ? `Update: ${kursBITanggal}` : ''}
+            onClose={() => setShowKursBI(false)}
+            dm={dm}
+            actions={!kursBILoading && !kursBIError && kursBIData && (
+              <PdfDownloadButton onClick={handleDownloadKursBIPdf} loading={kursBIPdfLoading} dm={dm} />
+            )}
+          />
+          <div className="hidden sm:block">
+            <ModalSearch value={kursBISearch} onChange={setKursBISearch} placeholder="Cari mata uang..." dm={dm} />
+          </div>
           <div className="px-4 sm:px-6 pb-6">
             {kursBILoading && <ModalSpinner label="Mengambil data dari Bank Indonesia…" dm={dm} />}
             {kursBIError && !kursBILoading && (
@@ -521,8 +491,13 @@ export default function KursSaldo() {
                       .map((row, i) => (
                         <tr key={i} className={`border-b text-sm sm:text-base transition-colors
                           ${dm ? 'border-slate-700/40 hover:bg-slate-700/30' : 'border-slate-100 hover:bg-slate-50'}`}>
-                          <td className="px-2 sm:px-3 py-2.5 font-semibold">{row.mataUang}</td>
-                          <td className="px-2 sm:px-3 py-2.5 text-right">{row.nilai}</td>
+                          <td className="px-2 sm:px-3 py-2.5 font-semibold">
+                            <span className="inline-flex items-center gap-2">
+                              {flagClass(row.mataUang) && <span className={`${flagClass(row.mataUang)} rounded-[2px] text-base`} />}
+                              {row.mataUang}
+                            </span>
+                          </td>
+                          <td className="px-2 sm:px-3 py-2.5 text-right" dir="ltr">{formatNilai(row.mataUang, row.nilai)}</td>
                           <td className="px-2 sm:px-3 py-2.5 text-right text-rose-500 font-medium">{row.kursJual}</td>
                           <td className={`px-2 sm:px-3 py-2.5 text-right font-medium ${dm ? 'text-indigo-400' : 'text-indigo-600'}`}>{row.kursTengah}</td>
                           <td className="px-2 sm:px-3 py-2.5 text-right text-emerald-500 font-medium">{row.kursBeli}</td>
@@ -539,8 +514,18 @@ export default function KursSaldo() {
       {/* ── Modal Kurs Pajak ────────────────────────────────────────────────── */}
       {showKursPajak && (
         <ModalOverlay onClose={() => setShowKursPajak(false)} dm={dm}>
-          <ModalHeader title="Kurs Pajak Kemenkeu" subtitle={kursPajakTanggal ? `Periode: ${kursPajakTanggal}` : ''} onClose={() => setShowKursPajak(false)} dm={dm} />
-          <ModalSearch value={kursPajakSearch} onChange={setKursPajakSearch} placeholder="Cari mata uang atau kode…" dm={dm} />
+          <ModalHeader
+            title="Kurs Pajak Kemenkeu"
+            subtitle={kursPajakTanggal ? `Periode: ${kursPajakTanggal}` : ''}
+            onClose={() => setShowKursPajak(false)}
+            dm={dm}
+            actions={!kursPajakLoading && !kursPajakError && kursPajakData && (
+              <PdfDownloadButton onClick={handleDownloadKursPajakPdf} loading={kursPajakPdfLoading} dm={dm} />
+            )}
+          />
+          <div className="hidden sm:block">
+            <ModalSearch value={kursPajakSearch} onChange={setKursPajakSearch} placeholder="Cari mata uang atau kode…" dm={dm} />
+          </div>
           <div className="px-4 sm:px-6 pb-6">
             {kursPajakLoading && <ModalSpinner label="Mengambil data dari Kemenkeu…" dm={dm} />}
             {kursPajakError && !kursPajakLoading && (
@@ -570,9 +555,14 @@ export default function KursSaldo() {
                         return (
                           <tr key={i} className={`border-b transition-colors
                             ${dm ? 'border-slate-700/40 hover:bg-slate-700/30' : 'border-slate-100 hover:bg-slate-50'}`}>
-                            <td className="px-3 py-2.5">{row.mataUangName}</td>
+                            <td className="px-3 py-2.5">
+                              <span className="inline-flex items-center gap-2">
+                                {flagClass(row.mataUang) && <span className={`${flagClass(row.mataUang)} rounded-[2px] text-base`} />}
+                                {row.mataUangName}
+                              </span>
+                            </td>
                             <td className="px-3 py-2.5 font-semibold">{row.mataUang}</td>
-                            <td className={`px-3 py-2.5 text-right text-xs sm:text-sm ${dm ? 'text-slate-500' : 'text-slate-400'}`}>{row.nilai}</td>
+                            <td className="px-3 py-2.5 text-right text-xs sm:text-sm" dir="ltr">{formatNilai(row.mataUang, row.nilai)}</td>
                             <td className={`px-3 py-2.5 text-right font-semibold ${dm ? 'text-indigo-400' : 'text-indigo-600'}`}>{row.kurs}</td>
                             <td className={`px-3 py-2.5 text-right font-medium text-xs sm:text-sm
                               ${isNeg ? 'text-rose-500' : isZero ? dm ? 'text-slate-500' : 'text-slate-400' : 'text-emerald-500'}`}>
@@ -584,73 +574,6 @@ export default function KursSaldo() {
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
-        </ModalOverlay>
-      )}
-
-      {/* ── Modal List JSON ─────────────────────────────────────────────────── */}
-      {showList && (
-        <ModalOverlay onClose={() => setShowList(false)} dm={dm}>
-          <ModalHeader
-            title="Ekspor Berita sebagai JSON"
-            subtitle="Format ringkas: title, description, link, pubDate, source"
-            onClose={() => setShowList(false)}
-            dm={dm}
-          />
-
-          <div className="px-4 sm:px-6 pb-6 pt-3 space-y-3">
-            {listLoading && <ModalSpinner label="Mengambil data berita…" dm={dm} />}
-
-            {listError && !listLoading && (
-              <ModalError message={listError} onRetry={fetchList} />
-            )}
-
-            {!listLoading && !listError && listJson && (
-              <>
-                {/* Action buttons */}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    onClick={handleCopyList}
-                    className={`flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl border transition-colors
-                      ${listCopied
-                        ? 'bg-emerald-600 text-white border-emerald-600'
-                        : dm
-                          ? 'bg-slate-700 border-slate-600 text-slate-200 hover:bg-slate-600'
-                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                      }`}
-                  >
-                    {listCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                    {listCopied ? 'Tersalin!' : 'Salin JSON'}
-                  </button>
-
-                  <button
-                    onClick={handleDownloadList}
-                    className={`flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl border transition-colors
-                      ${dm
-                        ? 'bg-slate-700 border-slate-600 text-slate-200 hover:bg-slate-600'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                      }`}
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    Unduh .json
-                  </button>
-
-                  <span className={`ml-auto text-[11px] sm:text-sm px-2.5 py-1.5 rounded-lg font-medium
-                    ${dm ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
-                    {JSON.parse(listJson).count} item
-                  </span>
-                </div>
-
-                {/* JSON preview */}
-                <div className={`rounded-xl border overflow-auto max-h-[55dvh] sm:max-h-[60vh]
-                  ${dm ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                  <pre className={`text-[11px] sm:text-sm leading-relaxed p-4 font-mono
-                    ${dm ? 'text-slate-300' : 'text-slate-700'}`}>
-                    {listJson}
-                  </pre>
-                </div>
-              </>
             )}
           </div>
         </ModalOverlay>
@@ -701,23 +624,44 @@ function ModalOverlay({ children, onClose, dm }: { children: React.ReactNode; on
   );
 }
 
-function ModalHeader({ title, subtitle, onClose, dm }: { title: string; subtitle: string; onClose: () => void; dm: boolean }) {
+function ModalHeader({ title, subtitle, onClose, dm, actions }: { title: string; subtitle: string; onClose: () => void; dm: boolean; actions?: React.ReactNode }) {
   return (
     <div className={`border-b ${dm ? 'border-slate-700' : 'border-slate-200'}`}>
       {/* Drag handle — mobile only */}
       <div className="sm:hidden flex justify-center pt-3 pb-1">
         <div className={`w-10 h-1 rounded-full ${dm ? 'bg-slate-600' : 'bg-slate-300'}`} />
       </div>
-      <div className="flex items-start justify-between px-4 sm:px-6 py-3 sm:py-4">
-        <div>
+      <div className="flex items-start justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4">
+        <div className="min-w-0">
           <h2 className="text-base sm:text-xl font-bold">{title}</h2>
           {subtitle && <p className={`text-xs sm:text-sm mt-0.5 ${dm ? 'text-slate-400' : 'text-slate-500'}`}>{subtitle}</p>}
         </div>
-        <button onClick={onClose} className={`p-1.5 rounded-lg transition-colors ${dm ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
-          <X className="w-4.5 h-4.5" />
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {actions}
+          <button onClick={onClose} className={`p-1.5 rounded-lg transition-colors ${dm ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
+            <X className="w-4.5 h-4.5" />
+          </button>
+        </div>
       </div>
     </div>
+  );
+}
+
+function PdfDownloadButton({ onClick, loading, dm }: { onClick: () => void; loading: boolean; dm: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading}
+      title="Unduh PDF"
+      className={`flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-2.5 sm:px-3 py-2 rounded-xl border transition-colors disabled:opacity-60
+        ${dm
+          ? 'bg-slate-700 border-slate-600 text-slate-200 hover:bg-slate-600'
+          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+        }`}
+    >
+      {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+      <span className="hidden sm:inline">{loading ? 'Membuat PDF…' : 'Unduh PDF'}</span>
+    </button>
   );
 }
 
