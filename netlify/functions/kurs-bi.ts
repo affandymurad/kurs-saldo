@@ -76,9 +76,14 @@ async function fetchKursBI(): Promise<KursBIResponse> {
   const tanggalFormat = convertTanggal(tanggalRaw);
 
   // ── Ambil tabel ──
-  const TABLE_ID =
-    '#ctl00_PlaceHolderMain_g_6c89d4ad_107f_437d_bd54_8fda17b556bf_ctl00_GridView1';
-  const table = $(TABLE_ID);
+  // ID tabel berubah-ubah; cari berdasarkan ID terbaru, lalu fallback ke header kolom.
+  let table = $('#cek_operasi');
+  if (!table.length) {
+    table = $('table').filter((_, el) => {
+      const head = $(el).find('tr').first().text();
+      return /Mata Uang/i.test(head) && /Kurs Jual/i.test(head) && /Kurs Beli/i.test(head);
+    }).first();
+  }
 
   if (!table.length) {
     throw new Error('Tabel kurs BI tidak ditemukan. Struktur halaman mungkin berubah.');
