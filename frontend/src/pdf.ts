@@ -78,36 +78,47 @@ function rasterizeText(text: string, opts: { fontPt?: number; color?: string; bo
 }
 
 // ─── Rasterisasi bendera (SVG dari flag-icons) via canvas ───
-const flagCache = new Map<string, string | null>();
+// URL SVG diambil langsung dari paket flag-icons (tidak bergantung pada CSS halaman yang mungkin belum termuat)
+const FLAG_URLS = import.meta.glob('../node_modules/flag-icons/flags/4x3/*.svg', { query: '?url', import: 'default', eager: true }) as Record<string, string>;
+const flagUrlFor = (cc: string) => FLAG_URLS[`../node_modules/flag-icons/flags/4x3/${cc}.svg`];
+
+const flagCache = new Map<string, string>();
+async function loadFlag(url: string): Promise<string> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`flag ${res.status}`);
+  let svg = await res.text();
+  // SVG tanpa width/height tidak bisa digambar ke canvas di sebagian browser (Firefox/Safari)
+  svg = svg.replace(/<svg\b([^>]*)>/i, (m, attrs: string) =>
+    /\swidth=/.test(attrs) ? m : `<svg${attrs} width="640" height="480">`);
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const i = new Image();
+    i.onload = () => resolve(i);
+    i.onerror = () => reject(new Error('flag decode failed'));
+    i.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  });
+  const canvas = document.createElement('canvas');
+  canvas.width = 128; canvas.height = 96;
+  canvas.getContext('2d')!.drawImage(img, 0, 0, 128, 96);
+  return canvas.toDataURL('image/png');
+}
+
 async function getFlagDataUrl(countryCode: string): Promise<string | null> {
-  if (flagCache.has(countryCode)) return flagCache.get(countryCode)!;
-  const span = document.createElement('span');
-  span.className = `fi fi-${countryCode}`;
-  span.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:32px;height:24px;';
-  document.body.appendChild(span);
-  const bg = getComputedStyle(span).backgroundImage;
-  document.body.removeChild(span);
-  const match = bg.match(/url\(["']?([^"')]+)["']?\)/);
-  if (!match) { flagCache.set(countryCode, null); return null; }
-  try {
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 64; canvas.height = 48;
-        const ctx = canvas.getContext('2d')!;
-        ctx.drawImage(img, 0, 0, 64, 48);
-        resolve(canvas.toDataURL('image/png'));
-      };
-      img.onerror = () => reject(new Error('flag load failed'));
-      img.src = match[1];
-    });
-    flagCache.set(countryCode, dataUrl);
-    return dataUrl;
-  } catch {
-    flagCache.set(countryCode, null);
-    return null;
+  if (!countryCode) return null;
+  const cached = flagCache.get(countryCode);
+  if (cached) return cached;
+  const url = flagUrlFor(countryCode);
+  if (!url) return null;
+  // gagal tidak di-cache supaya unduhan berikutnya mencoba lagi
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const dataUrl = await loadFlag(url);
+      flagCache.set(countryCode, dataUrl);
+      return dataUrl;
+    } catch {
+      await new Promise(r => setTimeout(r, 200 * (attempt + 1)));
+    }
   }
+  return null;
 }
 
 let logoCache: string | null | undefined;
@@ -243,18 +254,27 @@ async function generateReportPdf(spec: ReportSpec) {
     [spec.sourceName, 'Sumber data'],
   ];
   const gap = 4;
-  const tileW = (contentW - gap * (tiles.length - 1)) / tiles.length;
+  const weights = [2, 1, 1.2]; // kartu tanggal paling lebar (rentang tanggal Kurs Pajak panjang)
+  const weightSum = weights.reduce((a, b) => a + b, 0);
   let y = 36;
+  let x = M;
   tiles.forEach(([value, label], i) => {
-    const x = M + i * (tileW + gap);
+    const tileW = (contentW - gap * (tiles.length - 1)) * weights[i] / weightSum;
     fill(C.soft);
     doc.roundedRect(x, y, tileW, 19, 3, 3, 'F');
-    setFont('bold', 13);
+    // perkecil font sampai teks muat satu baris
+    let size = 13;
+    setFont('bold', size);
+    while (size > 8 && doc.getTextWidth(value) > tileW - 8) {
+      size -= 0.5;
+      doc.setFontSize(size);
+    }
     color(C.brand);
-    doc.text(value, x + 4, y + 8.5, { maxWidth: tileW - 8 });
+    doc.text(value, x + 4, y + 8.5);
     setFont('normal', 8);
     color(C.muted);
     doc.text(label, x + 4, y + 14.5);
+    x += tileW + gap;
   });
   y += 19 + 8;
 
