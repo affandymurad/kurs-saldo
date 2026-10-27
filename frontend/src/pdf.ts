@@ -4,15 +4,49 @@ import QRCode from 'qrcode';
 import { currencySymbol, CURRENCY_TO_COUNTRY } from './currency';
 import type { KursBIItem, KursPajakItem } from './types';
 
-const BRAND = { r: 79, g: 70, b: 229 };      // indigo-600
-const HEADER_DARK = { r: 30, g: 41, b: 59 }; // slate-800
-const ROW_ALT = { r: 248, g: 250, b: 252 };  // slate-50
-const MUTED = { r: 100, g: 116, b: 139 };    // slate-500
-const BORDER = { r: 226, g: 232, b: 240 };   // slate-200
+// PDF vektor tersusun (teks asli, tabel, tautan) dengan jsPDF + autoTable, bergaya Wikiabstrak:
+// pita judul, kartu ringkas, judul bagian beraksen, tabel grid, header berjalan, dan footer berhalaman.
+
+type RGB = readonly [number, number, number];
+const C = {
+  brand: [79, 70, 229] as RGB,     // indigo-600
+  ink: [30, 41, 59] as RGB,        // slate-800
+  muted: [100, 116, 139] as RGB,   // slate-500
+  line: [226, 232, 240] as RGB,    // slate-200
+  soft: [238, 242, 255] as RGB,    // indigo-50
+  alt: [248, 250, 252] as RGB,     // slate-50
+  white: [255, 255, 255] as RGB,
+  up: [5, 150, 105] as RGB,        // emerald-600
+  down: [225, 29, 72] as RGB,      // rose-600
+  zero: [148, 163, 184] as RGB,    // slate-400
+};
 const APP_URL = 'kurs-saldo.netlify.app';
+const PT_TO_MM = 25.4 / 72;
+
+// ─── Font Roboto (vektor, teks bisa dipilih); bila gagal dimuat dipakai helvetica ───
+const bufToBase64 = (buf: ArrayBuffer) => {
+  const bytes = new Uint8Array(buf);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + 0x8000)));
+  return btoa(bin);
+};
+let fontsPromise: Promise<{ normal: string; bold: string }> | null = null;
+function loadFonts() {
+  if (!fontsPromise) {
+    fontsPromise = Promise.all(['Roboto-Regular.ttf', 'Roboto-Bold.ttf'].map(async (f) => {
+      const res = await fetch(`/pdf-fonts/${f}`);
+      if (!res.ok) throw new Error(`Font ${f}: ${res.status}`);
+      return bufToBase64(await res.arrayBuffer());
+    })).then(([normal, bold]) => ({ normal, bold })).catch((e) => {
+      fontsPromise = null;
+      throw e;
+    });
+  }
+  return fontsPromise;
+}
 
 // ─── Rasterisasi teks (Kode/simbol) via canvas — biar semua skrip (Arab, Thai, Sinhala, simbol mata uang) render benar tanpa perlu embed font khusus di jsPDF ───
-function rasterizeText(text: string, opts: { fontPt?: number; color?: string; bold?: boolean } = {}): { dataUrl: string; widthPt: number; heightPt: number } {
+function rasterizeText(text: string, opts: { fontPt?: number; color?: string; bold?: boolean } = {}): { dataUrl: string; widthMm: number; heightMm: number } {
   const scale = 4;
   const fontPt = opts.fontPt ?? 9;
   const cssPx = fontPt * (96 / 72);
@@ -38,8 +72,8 @@ function rasterizeText(text: string, opts: { fontPt?: number; color?: string; bo
 
   return {
     dataUrl: canvas.toDataURL('image/png'),
-    widthPt: (width / scale) * (72 / 96),
-    heightPt: (height / scale) * (72 / 96),
+    widthMm: (width / scale) * (72 / 96) * PT_TO_MM,
+    heightMm: (height / scale) * (72 / 96) * PT_TO_MM,
   };
 }
 
@@ -124,7 +158,7 @@ function filenameTimestamp(date: Date): string {
 
 interface Column {
   header: string;
-  width: number;
+  width: number; // mm
   align: 'left' | 'center' | 'right';
 }
 
@@ -133,158 +167,216 @@ interface RowSpec {
   countryCode: string;
   mataUangText: string;
   kode: string;
-  extra: { text: string; color?: { r: number; g: number; b: number } }[];
+  extra: { text: string; color?: RGB; bold?: boolean }[];
 }
 
 interface ReportSpec {
   title: string;
-  dataPerLabel: string;
+  tanggal: string;
+  sourceName: string;
   sourceUrl: string;
   filenamePrefix: string;
-  columns: Column[]; // kolom setelah No & Mata Uang & Kode
+  columns: Column[]; // kolom setelah No, Mata Uang, dan Kode
   rows: RowSpec[];
 }
 
 async function generateReportPdf(spec: ReportSpec) {
-  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-  const pageWidth = doc.internal.pageSize.getWidth();
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
   const now = new Date();
+
+  let fontName = 'helvetica';
+  try {
+    const f = await loadFonts();
+    doc.addFileToVFS('Roboto-Regular.ttf', f.normal);
+    doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+    doc.addFileToVFS('Roboto-Bold.ttf', f.bold);
+    doc.addFont('Roboto-Bold.ttf', 'Roboto', 'bold');
+    fontName = 'Roboto';
+  } catch (e) {
+    console.warn('Font PDF gagal dimuat, memakai font bawaan:', e);
+  }
 
   const [logoDataUrl, qrDataUrl] = await Promise.all([getLogoDataUrl(), getQrDataUrl()]);
   const flagUrls = await Promise.all(spec.rows.map(r => getFlagDataUrl(r.countryCode)));
   const kodeImgs = spec.rows.map(r => rasterizeText(r.kode, { fontPt: 8.5, color: '#475569' }));
 
-  const NO_W = 26;
-  const MATA_UANG_W = 118;
-  const KODE_W = 62;
+  const M = 14;
+  const contentW = pageW - M * 2;
+  const TOP_NEXT = 20;
+  const BOTTOM = pageH - 18;
+  const color = (c: RGB) => doc.setTextColor(c[0], c[1], c[2]);
+  const fill = (c: RGB) => doc.setFillColor(c[0], c[1], c[2]);
+  const stroke = (c: RGB) => doc.setDrawColor(c[0], c[1], c[2]);
+  const setFont = (style: 'normal' | 'bold', size: number) => {
+    doc.setFont(fontName, style);
+    doc.setFontSize(size);
+  };
+
+  // ── pita judul ──
+  fill(C.brand);
+  doc.rect(0, 0, pageW, 28, 'F');
+  let titleX = M;
+  if (logoDataUrl) {
+    fill(C.white);
+    doc.roundedRect(M, 6, 16, 16, 3, 3, 'F');
+    doc.addImage(logoDataUrl, 'PNG', M + 2.5, 8.5, 11, 11);
+    titleX = M + 21;
+  }
+  color(C.white);
+  setFont('bold', 18);
+  doc.text(spec.title, titleX, 13.5);
+  setFont('normal', 9.5);
+  doc.text(`Kurs Saldo  |  ${APP_URL}`, titleX, 21);
+  if (qrDataUrl) {
+    const q = 18;
+    fill(C.white);
+    doc.roundedRect(pageW - M - q - 2, 5, q + 4, q + 4, 2, 2, 'F');
+    doc.addImage(qrDataUrl, 'PNG', pageW - M - q, 7, q, q);
+  }
+
+  // ── kartu ringkas ──
+  const tiles: [string, string][] = [
+    [spec.tanggal || '-', 'Data per'],
+    [String(spec.rows.length), 'Jumlah mata uang'],
+    [spec.sourceName, 'Sumber data'],
+  ];
+  const gap = 4;
+  const tileW = (contentW - gap * (tiles.length - 1)) / tiles.length;
+  let y = 36;
+  tiles.forEach(([value, label], i) => {
+    const x = M + i * (tileW + gap);
+    fill(C.soft);
+    doc.roundedRect(x, y, tileW, 19, 3, 3, 'F');
+    setFont('bold', 13);
+    color(C.brand);
+    doc.text(value, x + 4, y + 8.5, { maxWidth: tileW - 8 });
+    setFont('normal', 8);
+    color(C.muted);
+    doc.text(label, x + 4, y + 14.5);
+  });
+  y += 19 + 8;
+
+  // ── judul bagian ──
+  fill(C.brand);
+  doc.roundedRect(M, y - 4.2, 1.6, 6, 0.8, 0.8, 'F');
+  setFont('bold', 12.5);
+  color(C.ink);
+  doc.text('Daftar Kurs', M + 4.5, y);
+  y += 4;
+
+  // ── tabel ──
+  const NO_W = 10;
+  const MATA_UANG_W = 50;
+  const KODE_W = 26;
   const headers = ['No', 'Mata Uang', 'Kode', ...spec.columns.map(c => c.header)];
-  const body = spec.rows.map(r => [
-    String(r.no),
-    r.mataUangText,
-    '',
-    ...r.extra.map(e => e.text),
-  ]);
-
-  const meta1 = `${spec.dataPerLabel}  •  Dicetak: ${formatDicetak(now)}  •  ${spec.rows.length} mata uang`;
-  const meta2 = `Sumber: ${spec.sourceUrl}`;
-
-  const HEADER_BAND_H = 66;
-
-  function drawHeader() {
-    doc.setFillColor(BRAND.r, BRAND.g, BRAND.b);
-    doc.rect(0, 0, pageWidth, HEADER_BAND_H, 'F');
-
-    if (logoDataUrl) {
-      doc.setFillColor(255, 255, 255);
-      doc.roundedRect(24, 15, 36, 36, 8, 8, 'F');
-      doc.addImage(logoDataUrl, 'PNG', 30, 21, 24, 24);
-    }
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(15);
-    doc.text(spec.title, 72, 34);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9.5);
-    doc.text('Kurs Saldo', 72, 47);
-
-    const qrSize = 44;
-    const qrX = pageWidth - 24 - qrSize;
-    const qrY = 11;
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(qrX - 5, qrY - 5, qrSize + 10, qrSize + 10, 6, 6, 'F');
-    if (qrDataUrl) doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.setTextColor(BRAND.r, BRAND.g, BRAND.b);
-    doc.text(APP_URL, qrX + qrSize / 2, qrY + qrSize + 16, { align: 'center' });
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
-    doc.text(meta1, 24, HEADER_BAND_H + 16);
-    doc.text(meta2, 24, HEADER_BAND_H + 28);
-  }
-
-  function drawFooter(pageNum: number, pageCount: number) {
-    const pageHeight = doc.internal.pageSize.getHeight();
-    doc.setDrawColor(BORDER.r, BORDER.g, BORDER.b);
-    doc.line(24, pageHeight - 30, pageWidth - 24, pageHeight - 30);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
-    doc.text('Dokumen ini dicetak otomatis oleh aplikasi Kurs Saldo.', 24, pageHeight - 16);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(BRAND.r, BRAND.g, BRAND.b);
-    doc.text(`Halaman ${pageNum} / ${pageCount}`, pageWidth - 24, pageHeight - 16, { align: 'right' });
-  }
-
-  const mataUangColIdx = 1;
-  const kodeColIdx = 2;
+  const body = spec.rows.map(r => [String(r.no), r.mataUangText, '', ...r.extra.map(e => e.text)]);
 
   autoTable(doc, {
-    startY: HEADER_BAND_H + 40,
-    margin: { top: HEADER_BAND_H + 40, left: 24, right: 24, bottom: 40 },
+    startY: y,
+    margin: { top: TOP_NEXT, left: M, right: M, bottom: 18 },
     head: [headers],
     body,
-    theme: 'plain',
+    theme: 'grid',
+    rowPageBreak: 'avoid',
     styles: {
-      font: 'helvetica',
-      fontSize: 8.5,
-      cellPadding: { top: 7, bottom: 7, left: 6, right: 6 },
+      font: fontName,
+      fontSize: 8.8,
+      cellPadding: { top: 2.6, bottom: 2.6, left: 2.2, right: 2.2 },
       valign: 'middle',
-      textColor: [51, 65, 85],
+      overflow: 'linebreak',
+      textColor: [...C.ink],
+      lineColor: [...C.line],
+      lineWidth: 0.2,
     },
     headStyles: {
-      fillColor: [HEADER_DARK.r, HEADER_DARK.g, HEADER_DARK.b],
-      textColor: [255, 255, 255],
+      fillColor: [...C.ink],
+      textColor: [...C.white],
       fontStyle: 'bold',
-      fontSize: 8.5,
+      lineColor: [...C.ink],
     },
-    alternateRowStyles: { fillColor: [ROW_ALT.r, ROW_ALT.g, ROW_ALT.b] },
+    alternateRowStyles: { fillColor: [...C.alt] },
     columnStyles: {
-      0: { cellWidth: NO_W, halign: 'center', textColor: [148, 163, 184] },
-      1: { cellWidth: MATA_UANG_W, halign: 'left', cellPadding: { top: 7, bottom: 7, left: 26, right: 6 }, fontStyle: 'bold' },
+      0: { cellWidth: NO_W, halign: 'center', textColor: [...C.zero] },
+      1: { cellWidth: MATA_UANG_W, halign: 'left', fontStyle: 'bold', cellPadding: { top: 2.6, bottom: 2.6, left: 10, right: 2.2 } },
       2: { cellWidth: KODE_W, halign: 'center' },
       ...Object.fromEntries(spec.columns.map((c, i) => [3 + i, { cellWidth: c.width, halign: c.align }])),
     },
     didParseCell: (data) => {
+      if (data.section === 'head' && data.column.index === 1) data.cell.styles.halign = 'left';
+      if (data.section === 'head' && data.column.index >= 3) data.cell.styles.halign = spec.columns[data.column.index - 3].align;
       if (data.section === 'body' && data.column.index >= 3) {
         const extra = spec.rows[data.row.index].extra[data.column.index - 3];
-        if (extra?.color) data.cell.styles.textColor = [extra.color.r, extra.color.g, extra.color.b];
+        if (extra?.color) data.cell.styles.textColor = [...extra.color];
+        if (extra?.bold) data.cell.styles.fontStyle = 'bold';
       }
     },
     didDrawCell: (data) => {
       if (data.section !== 'body') return;
-      if (data.column.index === mataUangColIdx) {
+      if (data.column.index === 1) {
         const flagUrl = flagUrls[data.row.index];
         if (flagUrl) {
-          const h = 12, w = 16;
-          doc.addImage(flagUrl, 'PNG', data.cell.x + 6, data.cell.y + data.cell.height / 2 - h / 2, w, h);
+          const w = 5.6, h = 4.2;
+          doc.addImage(flagUrl, 'PNG', data.cell.x + 2.6, data.cell.y + data.cell.height / 2 - h / 2, w, h);
         }
       }
-      if (data.column.index === kodeColIdx) {
+      if (data.column.index === 2) {
         const img = kodeImgs[data.row.index];
-        const x = data.cell.x + data.cell.width / 2 - img.widthPt / 2;
-        const y = data.cell.y + data.cell.height / 2 - img.heightPt / 2;
-        doc.addImage(img.dataUrl, 'PNG', x, y, img.widthPt, img.heightPt);
+        const x = data.cell.x + data.cell.width / 2 - img.widthMm / 2;
+        const yy = data.cell.y + data.cell.height / 2 - img.heightMm / 2;
+        doc.addImage(img.dataUrl, 'PNG', x, yy, img.widthMm, img.heightMm);
       }
     },
-    didDrawPage: drawHeader,
   });
+  y = ((doc as any).lastAutoTable?.finalY ?? y) + 9;
 
-  const pageCount = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    drawFooter(i, pageCount);
+  // ── penutup ──
+  if (y + 24 > BOTTOM) { doc.addPage(); y = TOP_NEXT; }
+  stroke(C.line);
+  doc.setLineWidth(0.3);
+  doc.line(M, y, pageW - M, y);
+  y += 5;
+  setFont('normal', 8.5);
+  color(C.muted);
+  doc.text(`Dicetak: ${formatDicetak(now)}`, M, y);
+  y += 4.6;
+  doc.text('Sumber:', M, y);
+  color([47, 82, 112]);
+  doc.text(spec.sourceUrl, M + 12, y);
+  doc.link(M + 12, y - 3.2, doc.getTextWidth(spec.sourceUrl), 4.2, { url: spec.sourceUrl });
+  y += 4.6;
+  color(C.muted);
+  doc.text('Data bersifat informatif; untuk keperluan resmi rujuk langsung ke situs sumber.', M, y);
+
+  // ── header berjalan dan footer ──
+  const total = doc.getNumberOfPages();
+  for (let pg = 1; pg <= total; pg++) {
+    doc.setPage(pg);
+    if (pg > 1) {
+      setFont('normal', 8);
+      color(C.muted);
+      doc.text(`Kurs Saldo  |  ${spec.title}${spec.tanggal ? `  |  ${spec.tanggal}` : ''}`, M, 11);
+      stroke(C.line);
+      doc.setLineWidth(0.3);
+      doc.line(M, 13.5, pageW - M, 13.5);
+    }
+    stroke(C.line);
+    doc.setLineWidth(0.3);
+    doc.line(M, pageH - 13, pageW - M, pageH - 13);
+    setFont('normal', 8);
+    color(C.muted);
+    doc.text(`Kurs Saldo  -  dibuat otomatis di ${APP_URL}`, M, pageH - 8);
+    doc.text(`Halaman ${pg} / ${total}`, pageW - M, pageH - 8, { align: 'right' });
   }
 
   doc.save(`${spec.filenamePrefix}_${filenameTimestamp(now)}.pdf`);
 }
 
-function positiveNegativeColor(value: string): { r: number; g: number; b: number } | undefined {
-  if (value.startsWith('-')) return { r: 225, g: 29, b: 72 };   // rose-600
-  if (value === '0,00' || value === '0') return { r: 148, g: 163, b: 184 }; // slate-400
-  return { r: 5, g: 150, b: 105 }; // emerald-600
+function perubahanColor(value: string): RGB {
+  if (value.startsWith('-')) return C.down;
+  if (value === '0,00' || value === '0') return C.zero;
+  return C.up;
 }
 
 export async function generateKursBiPdf(data: KursBIItem[], tanggal: string) {
@@ -294,21 +386,22 @@ export async function generateKursBiPdf(data: KursBIItem[], tanggal: string) {
     mataUangText: row.mataUang,
     kode: `${currencySymbol(row.mataUang)}‎ ${row.nilai}`,
     extra: [
-      { text: row.kursBeli, color: { r: BRAND.r, g: BRAND.g, b: BRAND.b } },
-      { text: row.kursTengah, color: { r: BRAND.r, g: BRAND.g, b: BRAND.b } },
-      { text: row.kursJual, color: { r: BRAND.r, g: BRAND.g, b: BRAND.b } },
+      { text: row.kursBeli, color: C.brand },
+      { text: row.kursTengah, color: C.brand, bold: true },
+      { text: row.kursJual, color: C.brand },
     ],
   }));
 
   await generateReportPdf({
     title: 'Laporan Kurs Bank Indonesia',
-    dataPerLabel: `Data per: ${tanggal}`,
+    tanggal,
+    sourceName: 'Bank Indonesia',
     sourceUrl: 'https://www.bi.go.id/id/statistik/informasi-kurs/transaksi-bi/default.aspx',
     filenamePrefix: 'kurs_bi',
     columns: [
-      { header: 'Beli', width: 84, align: 'right' },
-      { header: 'Tengah', width: 84, align: 'right' },
-      { header: 'Jual', width: 84, align: 'right' },
+      { header: 'Beli', width: 32, align: 'right' },
+      { header: 'Tengah', width: 32, align: 'right' },
+      { header: 'Jual', width: 32, align: 'right' },
     ],
     rows,
   });
@@ -321,19 +414,20 @@ export async function generateKursPajakPdf(data: KursPajakItem[], tanggal: strin
     mataUangText: row.mataUangName,
     kode: `${currencySymbol(row.mataUang)}‎ ${row.nilai}`,
     extra: [
-      { text: row.kurs, color: { r: BRAND.r, g: BRAND.g, b: BRAND.b } },
-      { text: (row.perubahan.startsWith('-') || row.perubahan === '0,00' || row.perubahan === '0') ? row.perubahan : `+${row.perubahan}`, color: positiveNegativeColor(row.perubahan) },
+      { text: row.kurs, color: C.brand, bold: true },
+      { text: (row.perubahan.startsWith('-') || row.perubahan === '0,00' || row.perubahan === '0') ? row.perubahan : `+${row.perubahan}`, color: perubahanColor(row.perubahan) },
     ],
   }));
 
   await generateReportPdf({
     title: 'Laporan Kurs Pajak',
-    dataPerLabel: `Data per: ${tanggal}`,
+    tanggal,
+    sourceName: 'Kemenkeu (DJP)',
     sourceUrl: 'https://fiskal.kemenkeu.go.id/informasi-publik/kurs-pajak',
     filenamePrefix: 'kurs_pajak',
     columns: [
-      { header: 'Pajak', width: 110, align: 'right' },
-      { header: 'Perubahan', width: 110, align: 'right' },
+      { header: 'Kurs Pajak', width: 48, align: 'right' },
+      { header: 'Perubahan', width: 48, align: 'right' },
     ],
     rows,
   });
